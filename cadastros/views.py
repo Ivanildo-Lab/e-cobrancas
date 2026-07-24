@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import connection
+from threading import Thread
 from .models import Cidade, Cliente
 from .forms import CidadeForm, ClienteForm
 
@@ -193,4 +194,70 @@ def desativar_cliente(request, pk):
             cur.execute("UPDATE tbl_clientes SET ativo=%s WHERE id=%s", [novo, pk])
         status = "ativado" if novo else "desativado"
         messages.success(request, f'Cliente "{cliente.nome}" {status} com sucesso!')
+    return redirect('cadastros:lista_clientes')
+
+
+def _enviar_whatsapp(telefone, mensagem):
+    import requests
+    import logging
+    logger = logging.getLogger('cadastros')
+    try:
+        from decouple import config
+        url = config('EVOLUTION_API_URL')
+        api_key = config('EVOLUTION_API_KEY')
+        payload = {'number': telefone, 'text': mensagem}
+        headers = {'apikey': api_key, 'Content-Type': 'application/json'}
+        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        if resp.status_code in (200, 201):
+            logger.info(f"[WHATSAPP] Enviado para {telefone}: OK")
+        else:
+            logger.error(f"[WHATSAPP] Falha para {telefone}: {resp.status_code} - {resp.text}")
+    except Exception as e:
+        logger.error(f"[WHATSAPP] Erro para {telefone}: {e}")
+
+
+@login_required
+def enviar_whatsapp_clientes(request):
+    if request.method != 'POST':
+        return redirect('cadastros:lista_clientes')
+
+    ids_str = request.POST.get('clientes_ids', '')
+    mensagem = request.POST.get('mensagem', '').strip()
+
+    if not ids_str:
+        messages.warning(request, 'Nenhum cliente selecionado.')
+        return redirect('cadastros:lista_clientes')
+
+    if not mensagem:
+        messages.warning(request, 'Digite uma mensagem para enviar.')
+        return redirect('cadastros:lista_clientes')
+
+    ids = [int(x) for x in ids_str.split(',') if x.strip().isdigit()]
+    clientes = Cliente.objects.filter(pk__in=ids, ativo=True)
+
+    enviados = 0
+    erros = 0
+    sem_telefone = 0
+
+    for cliente in clientes:
+        if not cliente.telefone:
+            sem_telefone += 1
+            continue
+        telefone = cliente.telefone.replace('-', '').replace('(', '').replace(')', '').replace(' ', '').strip()
+        if not telefone.startswith('55'):
+            telefone = '55' + telefone
+        if len(telefone) < 12:
+            sem_telefone += 1
+            continue
+        thread = Thread(target=_enviar_whatsapp, args=(telefone, mensagem))
+        thread.start()
+        enviados += 1
+
+    if enviados > 0:
+        messages.success(request, f'Mensagem programada para envio para {enviados} cliente(s).')
+    if sem_telefone > 0:
+        messages.warning(request, f'{sem_telefone} cliente(s) sem telefone valido.')
+    if erros > 0:
+        messages.error(request, f'{erros} erro(s) no envio.')
+
     return redirect('cadastros:lista_clientes')

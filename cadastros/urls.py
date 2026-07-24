@@ -12,4 +12,5 @@ urlpatterns = [
     path('clientes/novo/', views.criar_cliente, name='criar_cliente'),
     path('clientes/<int:pk>/editar/', views.editar_cliente, name='editar_cliente'),
     path('clientes/<int:pk>/desativar/', views.desativar_cliente, name='desativar_cliente'),
+    path('clientes/whatsapp/', views.enviar_whatsapp_clientes, name='enviar_whatsapp_clientes'),
 ]

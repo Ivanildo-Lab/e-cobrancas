@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Parcela | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}Editar Parcela{% endblock %}
+{% block subtitulo_cabecalho %}{{ parcela.parcela }} - {{ parcela.cliente.nome }}{% endblock %}
+{% block breadcrumb %}Parcelas > Editar{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border-t-4 border-blue-500 p-6">
+
+    <div class="bg-slate-50 rounded-xl p-4 mb-6 space-y-2">
+        <p class="text-sm"><span class="font-bold text-gray-400">Cliente:</span> <span class="font-bold text-slate-700">{{ parcela.cliente.nome }}</span></p>
+        <p class="text-sm"><span class="font-bold text-gray-400">Parcela:</span> {{ parcela.parcela }}</p>
+        <p class="text-sm"><span class="font-bold text-gray-400">Situacao:</span> {{ parcela.situacao }}</p>
+    </div>
+
+    {% if form.errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+        <p class="text-sm text-red-700 font-bold mb-2 uppercase">Corrija os erros:</p>
+        <ul class="text-xs text-red-600 list-disc ml-5">
+            {% for field in form %}{% for error in field.errors %}<li><strong>{{ field.label }}:</strong> {{ error }}</li>{% endfor %}{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor da Parcela (R$)</label>
+                {{ form.valorconta }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data de Vencimento</label>
+                {{ form.vencimento }}
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+            <a href="{% url 'financeiro:lista_parcelas' %}" class="px-8 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">CANCELAR</a>
+            <button type="submit" class="px-12 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
+                <i class="fa fa-save mr-2"></i> SALVAR ALTERACOES
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

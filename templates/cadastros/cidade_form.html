@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}{{ titulo }}{% endblock %}
+{% block subtitulo_cabecalho %}Preencha os dados da cidade{% endblock %}
+{% block breadcrumb %}Cidades > Formulario{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border-t-4 border-purple-500 p-6">
+
+    {% if form.errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+        <p class="text-sm text-red-700 font-bold mb-2 uppercase">Corrija os erros abaixo:</p>
+        <ul class="text-xs text-red-600 list-disc ml-5">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nome da Cidade</label>
+                {{ form.nome }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Estado (UF)</label>
+                {{ form.uf }}
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+            <a href="{% url 'cadastros:lista_cidades' %}" class="px-8 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">CANCELAR</a>
+            <button type="submit" class="px-12 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 shadow-lg transition">
+                <i class="fa fa-save mr-2"></i> SALVAR
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

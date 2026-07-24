@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Parcelas | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}Lista de Parcelas{% endblock %}
+{% block subtitulo_cabecalho %}Gerencie todas as cobrancas{% endblock %}
+{% block breadcrumb %}Parcelas{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+    <form method="get" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Status</label>
+                {{ form.status }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cliente</label>
+                {{ form.cliente }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Venc. Inicio</label>
+                {{ form.venc_inicio }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Venc. Fim</label>
+                {{ form.venc_fim }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pag. Inicio</label>
+                {{ form.pag_inicio }}
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Pag. Fim</label>
+                {{ form.pag_fim }}
+            </div>
+        </div>
+        <div class="flex justify-between items-center">
+            <a href="{% url 'financeiro:lista_parcelas' %}" class="text-sm text-gray-500 hover:text-gray-700 font-bold">
+                <i class="fa fa-times mr-1"></i> Limpar Filtros
+            </a>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+                    <i class="fa fa-filter mr-1"></i> Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Acoes em Lote -->
+<div class="flex flex-wrap gap-2 mb-6">
+    <a href="{% url 'financeiro:gerar_pdf' %}?{{ request.GET.urlencode }}" target="_blank"
+        class="bg-rose-100 text-rose-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-200 transition inline-flex items-center gap-2">
+        <i class="fa fa-file-pdf"></i> Gerar PDF
+    </a>
+    {% if parcelas %}
+    <form method="post" action="{% url 'financeiro:enviar_lote_whatsapp' %}" class="inline"
+        onsubmit="return confirm('Enviar lembretes WhatsApp para os clientes das parcelas filtradas?')">
+        {% csrf_token %}
+        {% for k, v in current_filters.items %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endfor %}
+        <button type="submit" class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition inline-flex items-center gap-2">
+            <i class="fab fa-whatsapp"></i> Enviar Lembretes (Lote)
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Totais -->
+<div class="bg-slate-100 rounded-xl p-4 mb-6 flex flex-wrap justify-around text-sm">
+    <span class="font-bold text-slate-700">Total Parcelas: <span class="text-blue-600">{{ totais.quantidade }}</span></span>
+    <span class="font-bold text-slate-700">Valor Total: <span class="text-green-600">R$ {{ totais.valor_parcelas|floatformat:2 }}</span></span>
+</div>
+
+<!-- Tabela -->
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Cliente</th>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Parcela</th>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Vencimento</th>
+                    <th class="text-right px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Valor</th>
+                    <th class="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Situacao</th>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Pagto</th>
+                    <th class="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Acoes</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for parcela in parcelas %}
+                {% with sit=parcela.situacao|lower %}
+                <tr class="{% if sit == 'liquidada' %}bg-green-50/50{% elif sit == 'aberta' and parcela.esta_vencida %}bg-red-50/50{% else %}hover:bg-slate-50{% endif %} transition">
+                    <td class="px-4 py-3 font-bold text-slate-700 max-w-[150px] truncate">{{ parcela.cliente.nome }}</td>
+                    <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ parcela.parcela }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ parcela.vencimento|date:"d/m/Y" }}</td>
+                    <td class="px-4 py-3 text-right font-bold text-slate-700">R$ {{ parcela.valorconta|floatformat:2 }}</td>
+                    <td class="px-4 py-3 text-center">
+                        {% if sit == 'liquidada' %}
+                            <span class="bg-green-100 text-green-700 text-[10px] font-black px-3 py-1 rounded-full">Liquidada</span>
+                        {% elif sit == 'cancelada' %}
+                            <span class="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full">Cancelada</span>
+                        {% elif parcela.esta_vencida %}
+                            <span class="bg-red-100 text-red-700 text-[10px] font-black px-3 py-1 rounded-full">Atrasada</span>
+                        {% else %}
+                            <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-3 py-1 rounded-full">Aberta</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-slate-500 text-xs">{{ parcela.pagamento|date:"d/m/Y"|default:"-" }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            {% if sit == 'aberta' %}
+                                <!-- Pagar -->
+                                <button type="button" class="text-green-500 hover:text-green-700 p-1" title="Registrar Pagamento"
+                                    onclick="document.getElementById('modal-pagar-{{ parcela.id }}').classList.remove('hidden')">
+                                    <i class="fa fa-dollar-sign"></i>
+                                </button>
+                                <!-- Editar -->
+                                <a href="{% url 'financeiro:editar_parcela' parcela.pk %}" class="text-blue-500 hover:text-blue-700 p-1" title="Editar">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <!-- Cancelar -->
+                                <button type="button" class="text-amber-500 hover:text-amber-700 p-1" title="Cancelar"
+                                    onclick="document.getElementById('modal-cancelar-{{ parcela.id }}').classList.remove('hidden')">
+                                    <i class="fa fa-ban"></i>
+                                </button>
+                                <!-- WhatsApp Individual -->
+                                {% if parcela.cliente.telefone %}
+                                <a href="{% url 'financeiro:enviar_whatsapp_individual' parcela.pk %}"
+                                    class="text-emerald-500 hover:text-emerald-700 p-1" title="Enviar WhatsApp"
+                                    onclick="return confirm('Enviar cobranca via WhatsApp para {{ parcela.cliente.nome }}?')">
+                                    <i class="fab fa-whatsapp"></i>
+                                </a>
+                                {% endif %}
+                            {% elif sit == 'liquidada' %}
+                                <!-- Desfazer Liquidacao -->
+                                <button type="button" class="text-amber-500 hover:text-amber-700 p-1" title="Desfazer Liquidacao"
+                                    onclick="document.getElementById('modal-desfazer-{{ parcela.id }}').classList.remove('hidden')">
+                                    <i class="fa fa-undo"></i>
+                                </button>
+                            {% else %}
+                                <span class="text-gray-300 italic text-xs">N/A</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                        <i class="fa fa-file-invoice text-3xl mb-2 block"></i>
+                        Nenhuma parcela encontrada com os filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Paginacao -->
+{% if parcelas.has_other_pages %}
+{% with base_url=request.GET.urlencode %}
+<nav class="mt-6 flex justify-center">
+    <ul class="flex items-center gap-2">
+        {% if parcelas.has_previous %}
+            <li><a href="?page={{ parcelas.previous_page_number }}&status={{ current_filters.status|default:'aberta' }}{% if current_filters.cliente %}&cliente={{ current_filters.cliente }}{% endif %}{% if current_filters.venc_inicio %}&venc_inicio={{ current_filters.venc_inicio }}{% endif %}{% if current_filters.venc_fim %}&venc_fim={{ current_filters.venc_fim }}{% endif %}{% if current_filters.pag_inicio %}&pag_inicio={{ current_filters.pag_inicio }}{% endif %}{% if current_filters.pag_fim %}&pag_fim={{ current_filters.pag_fim }}{% endif %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
+        {% endif %}
+        {% for num in parcelas.paginator.page_range %}
+            {% if parcelas.number == num %}
+                <li><span class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{{ num }}</span></li>
+            {% elif num > parcelas.number|add:'-3' and num < parcelas.number|add:'3' %}
+                <li><a href="?page={{ num }}&status={{ current_filters.status|default:'aberta' }}{% if current_filters.cliente %}&cliente={{ current_filters.cliente }}{% endif %}{% if current_filters.venc_inicio %}&venc_inicio={{ current_filters.venc_inicio }}{% endif %}{% if current_filters.venc_fim %}&venc_fim={{ current_filters.venc_fim }}{% endif %}{% if current_filters.pag_inicio %}&pag_inicio={{ current_filters.pag_inicio }}{% endif %}{% if current_filters.pag_fim %}&pag_fim={{ current_filters.pag_fim }}{% endif %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if parcelas.has_next %}
+            <li><a href="?page={{ parcelas.next_page_number }}&status={{ current_filters.status|default:'aberta' }}{% if current_filters.cliente %}&cliente={{ current_filters.cliente }}{% endif %}{% if current_filters.venc_inicio %}&venc_inicio={{ current_filters.venc_inicio }}{% endif %}{% if current_filters.venc_fim %}&venc_fim={{ current_filters.venc_fim }}{% endif %}{% if current_filters.pag_inicio %}&pag_inicio={{ current_filters.pag_inicio }}{% endif %}{% if current_filters.pag_fim %}&pag_fim={{ current_filters.pag_fim }}{% endif %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endwith %}
+{% endif %}
+
+<!-- MODAIS -->
+{% for parcela in parcelas %}
+{% with sit=parcela.situacao|lower %}
+{% if sit == 'aberta' %}
+<!-- Modal Pagamento -->
+<div id="modal-pagar-{{ parcela.id }}" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <h3 class="text-lg font-black text-slate-800 mb-4"><i class="fa fa-dollar-sign text-green-500 mr-2"></i> Registrar Pagamento</h3>
+        <div class="bg-slate-50 rounded-xl p-4 mb-4 space-y-2">
+            <p class="text-sm"><span class="font-bold text-gray-400">Cliente:</span> {{ parcela.cliente.nome }}</p>
+            <p class="text-sm"><span class="font-bold text-gray-400">Parcela:</span> {{ parcela.parcela }}</p>
+            <p class="text-sm"><span class="font-bold text-gray-400">Vencimento:</span> {{ parcela.vencimento|date:"d/m/Y" }}</p>
+            <p class="text-sm"><span class="font-bold text-gray-400">Valor:</span> R$ {{ parcela.valorconta|floatformat:2 }}</p>
+        </div>
+        <form method="post" action="{% url 'financeiro:registrar_pagamento' parcela.pk %}" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data do Pagamento</label>
+                <input type="date" name="data_pagamento" required value="{% now 'Y-m-d' %}"
+                    class="w-full border border-gray-300 rounded-xl p-2 text-sm shadow-sm focus:ring-2 focus:ring-green-500 outline-none">
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="px-6 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">Voltar</button>
+                <button type="submit" class="px-8 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg transition">Confirmar Pagamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Cancelar -->
+<div id="modal-cancelar-{{ parcela.id }}" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <h3 class="text-lg font-black text-slate-800 mb-4"><i class="fa fa-ban text-amber-500 mr-2"></i> Confirmar Cancelamento</h3>
+        <p class="text-sm text-gray-600 mb-4">Tem certeza que deseja cancelar a parcela <strong>{{ parcela.parcela }}</strong> do cliente <strong>{{ parcela.cliente.nome }}</strong> no valor de R$ {{ parcela.valorconta|floatformat:2 }}?</p>
+        <p class="text-xs text-red-500 mb-4"><i class="fa fa-exclamation-triangle mr-1"></i> Esta acao nao pode ser desfeita facilmente.</p>
+        <form method="post" action="{% url 'financeiro:cancelar_parcela' parcela.pk %}" class="flex justify-end gap-3">
+            {% csrf_token %}
+            <button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="px-6 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">Voltar</button>
+            <button type="submit" class="px-8 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg transition">Confirmar Cancelamento</button>
+        </form>
+    </div>
+</div>
+{% elif sit == 'liquidada' %}
+<!-- Modal Desfazer Liquidacao -->
+<div id="modal-desfazer-{{ parcela.id }}" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <h3 class="text-lg font-black text-slate-800 mb-4"><i class="fa fa-undo text-amber-500 mr-2"></i> Desfazer Liquidacao</h3>
+        <div class="bg-slate-50 rounded-xl p-4 mb-4 space-y-2">
+            <p class="text-sm"><span class="font-bold text-gray-400">Cliente:</span> {{ parcela.cliente.nome }}</p>
+            <p class="text-sm"><span class="font-bold text-gray-400">Parcela:</span> {{ parcela.parcela }}</p>
+            <p class="text-sm"><span class="font-bold text-gray-400">Valor:</span> R$ {{ parcela.valorconta|floatformat:2 }}</p>
+            {% if parcela.pagamento %}
+            <p class="text-sm"><span class="font-bold text-gray-400">Data Pagamento:</span> {{ parcela.pagamento|date:"d/m/Y" }}</p>
+            {% endif %}
+        </div>
+        <p class="text-xs text-amber-600 mb-4">Isso reabrirá a parcela, limpando a data de pagamento.</p>
+        <form method="post" action="{% url 'financeiro:desfazer_liquidacao' parcela.pk %}" class="flex justify-end gap-3">
+            {% csrf_token %}
+            <button type="button" onclick="this.closest('.fixed').classList.add('hidden')" class="px-6 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">Manter Liquidada</button>
+            <button type="submit" class="px-8 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 shadow-lg transition">Sim, Desfazer</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+{% endfor %}
+{% endblock %}

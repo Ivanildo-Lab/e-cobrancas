@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Cobrancas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in { animation: fadeIn 1s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .text-shadow { text-shadow: 2px 2px 4px rgba(0,0,0,0.6); }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col overflow-hidden bg-gray-900 text-white">
+    <div class="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 transform scale-105"
+        style="background-image: url('{% static "img/fundo-home.jpg" %}');"></div>
+    <div class="absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
+
+    <nav class="relative z-20 w-full px-8 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
+                <i class="fa fa-money-bill-wave"></i>
+            </div>
+            <span class="text-xl font-bold tracking-wider text-shadow">e-Cobrancas</span>
+        </div>
+        <div class="flex items-center gap-6">
+            {% if user.is_authenticated %}
+                <a href="{% url 'financeiro:dashboard' %}" class="bg-blue-600 px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition">Dashboard</a>
+                <form action="{% url 'logout' %}" method="post">{% csrf_token %}
+                    <button type="submit" class="text-gray-300 hover:text-white transition text-sm font-medium border border-white/20 px-4 py-2 rounded-full hover:bg-white/10">Sair</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="bg-blue-600 px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition">Entrar</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="relative z-20 flex-1 flex flex-col items-center justify-center text-center px-4 fade-in">
+        {% if user.is_authenticated %}
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 text-shadow leading-tight">
+                Gestao de Cobrancas<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">{{ user.empresa.nome|default:"e-Cobrancas" }}</span>
+            </h1>
+            <a href="{% url 'financeiro:dashboard' %}" class="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full shadow-2xl transition-all transform hover:-translate-y-1">
+                Acessar Dashboard
+            </a>
+        {% else %}
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 text-shadow">Controle Suas<br>Cobrancas.</h1>
+            <p class="text-lg text-gray-300 mb-10 max-w-2xl text-shadow">Sistema completo para gerenciar clientes, parcelas e envio de cobrancas via WhatsApp.</p>
+            <a href="{% url 'login' %}" class="px-10 py-4 bg-white text-blue-900 font-bold rounded-full shadow-2xl hover:bg-gray-100 transition">Comecar Agora</a>
+        {% endif %}
+    </main>
+
+    <footer class="relative z-20 w-full py-6 text-center text-gray-400 text-xs">
+        <p>&copy; {% now "Y" %} <strong>e-Cobrancas</strong>.</p>
+    </footer>
+</body>
+</html>

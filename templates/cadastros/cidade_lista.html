@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Cidades | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}Cidades{% endblock %}
+{% block subtitulo_cabecalho %}Gerenciamento de cidades{% endblock %}
+{% block breadcrumb %}Cidades{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <form method="get" class="flex gap-2 flex-1">
+            <input type="text" name="q" value="{{ busca }}" placeholder="Buscar cidade..."
+                class="flex-1 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+                <i class="fa fa-search"></i>
+            </button>
+        </form>
+        <a href="{% url 'cadastros:criar_cidade' %}" class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition inline-flex items-center gap-2">
+            <i class="fa fa-plus"></i> Nova Cidade
+        </a>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+                <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Cidade</th>
+                <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">UF</th>
+                <th class="text-center px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Acoes</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for cidade in cidades %}
+            <tr class="hover:bg-slate-50 transition">
+                <td class="px-6 py-4 font-bold text-slate-700">{{ cidade.nome }}</td>
+                <td class="px-6 py-4 text-slate-500">{{ cidade.uf }}</td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                        <a href="{% url 'cadastros:editar_cidade' cidade.pk %}" class="text-blue-500 hover:text-blue-700 p-1" title="Editar">
+                            <i class="fa fa-edit"></i>
+                        </a>
+                        <form method="post" action="{% url 'cadastros:excluir_cidade' cidade.pk %}" class="inline"
+                            onsubmit="return confirm('Tem certeza que deseja excluir {{ cidade }}?')">
+                            {% csrf_token %}
+                            <button type="submit" class="text-rose-500 hover:text-rose-700 p-1" title="Excluir">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="px-6 py-12 text-center text-gray-400">
+                    <i class="fa fa-city text-3xl mb-2 block"></i>
+                    Nenhuma cidade encontrada.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if cidades.has_other_pages %}
+<nav class="mt-6 flex justify-center">
+    <ul class="flex items-center gap-2">
+        {% if cidades.has_previous %}
+            <li><a href="?page={{ cidades.previous_page_number }}&q={{ busca }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
+        {% endif %}
+        {% for num in cidades.paginator.page_range %}
+            {% if cidades.number == num %}
+                <li><span class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{{ num }}</span></li>
+            {% elif num > cidades.number|add:'-3' and num < cidades.number|add:'3' %}
+                <li><a href="?page={{ num }}&q={{ busca }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if cidades.has_next %}
+            <li><a href="?page={{ cidades.next_page_number }}&q={{ busca }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

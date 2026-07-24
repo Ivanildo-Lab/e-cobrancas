@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}{{ titulo }}{% endblock %}
+{% block subtitulo_cabecalho %}Preencha os dados do cliente{% endblock %}
+{% block breadcrumb %}Clientes > Formulario{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border-t-4 border-orange-500 p-6">
+
+    {% if form.errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+        <p class="text-sm text-red-700 font-bold mb-2 uppercase">Corrija os erros abaixo:</p>
+        <ul class="text-xs text-red-600 list-disc ml-5">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Dados Pessoais -->
+        <div class="border-b border-gray-100 pb-4">
+            <h3 class="text-sm font-black text-slate-700 uppercase mb-4"><i class="fa fa-user mr-2 text-orange-500"></i> Dados Pessoais</h3>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="md:col-span-6">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nome Completo *</label>
+                    {{ form.nome }}
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Contato</label>
+                    {{ form.contato }}
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Conexao</label>
+                    {{ form.conexao }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contato -->
+        <div class="border-b border-gray-100 pb-4">
+            <h3 class="text-sm font-black text-slate-700 uppercase mb-4"><i class="fa fa-address-book mr-2 text-blue-500"></i> Contato</h3>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Telefone</label>
+                    {{ form.telefone }}
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cidade *</label>
+                    {{ form.cidade }}
+                </div>
+                <div class="md:col-span-4 flex items-end">
+                    <div class="flex items-center gap-3">
+                        {{ form.ativo }}
+                        <label class="text-sm font-bold text-gray-700 cursor-pointer">Cliente Ativo</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cobranca -->
+        <div class="border-b border-gray-100 pb-4">
+            <h3 class="text-sm font-black text-slate-700 uppercase mb-4"><i class="fa fa-money-bill-wave mr-2 text-green-500"></i> Dados de Cobranca</h3>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor Mensalidade (R$)</label>
+                    {{ form.valormensalidade }}
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Dia da Cobranca (1-31)</label>
+                    {{ form.diacobranca }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Observacoes -->
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Observacoes</label>
+            {{ form.obs }}
+        </div>
+
+        <!-- Botoes -->
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+            <a href="{% url 'cadastros:lista_clientes' %}" class="px-8 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">CANCELAR</a>
+            <button type="submit" class="px-12 py-2 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 shadow-lg transition">
+                <i class="fa fa-save mr-2"></i> SALVAR CLIENTE
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

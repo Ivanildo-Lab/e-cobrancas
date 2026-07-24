@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}Dashboard{% endblock %}
+{% block subtitulo_cabecalho %}Visao geral do financeiro{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <!-- Card: A Receber no Mes -->
+    <div class="bg-white rounded-2xl shadow-sm border-t-4 border-green-500 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <i class="fa fa-arrow-up text-green-600 text-xl"></i>
+            </div>
+            <span class="text-[10px] font-black text-green-500 uppercase">{{ nome_mes_atual }}</span>
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">A Receber no Mes</p>
+        <p class="text-2xl font-black text-green-600">R$ {{ a_receber_mes|floatformat:2 }}</p>
+    </div>
+
+    <!-- Card: Recebido no Mes -->
+    <div class="bg-white rounded-2xl shadow-sm border-t-4 border-blue-500 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <i class="fa fa-check-circle text-blue-600 text-xl"></i>
+            </div>
+            <span class="text-[10px] font-black text-blue-500 uppercase">{{ nome_mes_atual }}</span>
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Recebido no Mes</p>
+        <p class="text-2xl font-black text-blue-600">R$ {{ recebido_mes|floatformat:2 }}</p>
+    </div>
+
+    <!-- Card: Total Atrasado -->
+    <div class="bg-white rounded-2xl shadow-sm border-t-4 border-red-500 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="h-12 w-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <i class="fa fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <span class="text-[10px] font-black text-red-500 uppercase">ATRASADO</span>
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Total em Atraso</p>
+        <p class="text-2xl font-black text-red-600">R$ {{ total_atrasado|floatformat:2 }}</p>
+    </div>
+</div>
+
+<!-- Resumo Rápido -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4">
+        <div class="h-12 w-12 bg-purple-100 rounded-xl flex items-center justify-center">
+            <i class="fa fa-users text-purple-600 text-xl"></i>
+        </div>
+        <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase">Clientes Ativos</p>
+            <p class="text-xl font-black text-slate-800">{{ total_clientes }}</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4">
+        <div class="h-12 w-12 bg-amber-100 rounded-xl flex items-center justify-center">
+            <i class="fa fa-file-invoice text-amber-600 text-xl"></i>
+        </div>
+        <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase">Parcelas em Aberto</p>
+            <p class="text-xl font-black text-slate-800">{{ total_parcelas_abertas }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Grafico -->
+<div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+    <h3 class="text-sm font-black text-slate-700 uppercase mb-4">Recebimentos vs A Vencer (Ultimos 6 meses)</h3>
+    <canvas id="graficoFinanceiro" height="100"></canvas>
+</div>
+
+<!-- Acoes Rapidas -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="{% url 'financeiro:gerar_parcelas' %}" class="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition group">
+        <div class="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-500 transition">
+            <i class="fa fa-plus text-green-600 text-xl group-hover:text-white transition"></i>
+        </div>
+        <div>
+            <p class="text-sm font-black text-slate-700">Gerar Parcelas</p>
+            <p class="text-[10px] text-gray-400">Criar novas cobrancas</p>
+        </div>
+    </a>
+    <a href="{% url 'financeiro:lista_parcelas' %}" class="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition group">
+        <div class="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-500 transition">
+            <i class="fa fa-list text-blue-600 text-xl group-hover:text-white transition"></i>
+        </div>
+        <div>
+            <p class="text-sm font-black text-slate-700">Ver Parcelas</p>
+            <p class="text-[10px] text-gray-400">Lista completa de cobrancas</p>
+        </div>
+    </a>
+    <a href="{% url 'cadastros:lista_clientes' %}" class="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition group">
+        <div class="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-500 transition">
+            <i class="fa fa-users text-orange-600 text-xl group-hover:text-white transition"></i>
+        </div>
+        <div>
+            <p class="text-sm font-black text-slate-700">Clientes</p>
+            <p class="text-[10px] text-gray-400">Gerenciar cadastros</p>
+        </div>
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    const ctx = document.getElementById('graficoFinanceiro').getContext('2d');
+    const chartData = {{ chart_data|safe }};
+    new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } }
+            }
+        }
+    });
+</script>
+{% endblock %}

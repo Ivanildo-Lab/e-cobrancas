@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | e-Cobrancas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="font-sans antialiased h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div class="w-full max-w-md p-8">
+        <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8">
+            <div class="text-center mb-8">
+                <div class="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fa fa-money-bill-wave text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-black text-white">e-Cobrancas</h1>
+                <p class="text-blue-200 text-sm mt-1">Sistema de Cobranca</p>
+            </div>
+
+            {% if form.errors %}
+                <div class="bg-rose-500/20 border border-rose-400/30 rounded-xl p-3 mb-6">
+                    <p class="text-rose-200 text-sm text-center font-bold">
+                        <i class="fa fa-exclamation-triangle mr-1"></i> Usuario ou senha invalidos.
+                    </p>
+                </div>
+            {% endif %}
+
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-[10px] font-black text-blue-200 uppercase mb-1 tracking-wider">Usuario</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa fa-user text-slate-400"></i>
+                        </div>
+                        <input type="text" name="username" required
+                            class="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            placeholder="Seu usuario">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-blue-200 uppercase mb-1 tracking-wider">Senha</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa fa-lock text-slate-400"></i>
+                        </div>
+                        <input type="password" name="password" required
+                            class="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            placeholder="Sua senha">
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
+                    <i class="fa fa-sign-in-alt mr-2"></i> ENTRAR
+                </button>
+            </form>
+        </div>
+        <p class="text-center text-slate-500 text-xs mt-6">&copy; {% now "Y" %} e-Cobrancas</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerar Parcelas | e-Cobrancas{% endblock %}
+{% block titulo_cabecalho %}Gerar Parcelas{% endblock %}
+{% block subtitulo_cabecalho %}Crie novas cobrancas para um cliente{% endblock %}
+{% block breadcrumb %}Parcelas > Gerar{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border-t-4 border-green-500 p-6">
+
+    {% if form.errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+        <p class="text-sm text-red-700 font-bold mb-2 uppercase">Corrija os erros abaixo:</p>
+        <ul class="text-xs text-red-600 list-disc ml-5">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="bg-green-50/50 p-4 rounded-xl border border-green-100">
+            <h3 class="text-sm font-black text-green-700 uppercase mb-4"><i class="fa fa-user mr-2"></i> Cliente</h3>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Selecione o Cliente *</label>
+                {{ form.cliente }}
+            </div>
+        </div>
+
+        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+            <h3 class="text-sm font-black text-blue-700 uppercase mb-4"><i class="fa fa-calculator mr-2"></i> Valores e Datas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor de Cada Parcela (R$) *</label>
+                    {{ form.valor_parcela }}
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Quantidade de Parcelas *</label>
+                    {{ form.quantidade_parcelas }}
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">1o Vencimento *</label>
+                    {{ form.primeiro_vencimento }}
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Periodicidade *</label>
+                {{ form.periodicidade }}
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200" id="preview-area">
+            <h3 class="text-sm font-black text-slate-700 uppercase mb-3"><i class="fa fa-eye mr-2"></i> Pre-visualizacao</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Total Geral</p>
+                    <p class="text-xl font-black text-slate-800" id="prev-total">R$ 0,00</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Qtd Parcelas</p>
+                    <p class="text-xl font-black text-blue-600" id="prev-qtd">0</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Valor Parcela</p>
+                    <p class="text-xl font-black text-green-600" id="prev-valor">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+            <a href="{% url 'financeiro:lista_parcelas' %}" class="px-8 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">CANCELAR</a>
+            <button type="submit" class="px-12 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg transition">
+                <i class="fa fa-check-circle mr-2"></i> GERAR PARCELAS
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputValor = document.getElementById('id_valor_parcela');
+        const inputQtd = document.getElementById('id_quantidade_parcelas');
+        const prevTotal = document.getElementById('prev-total');
+        const prevQtd = document.getElementById('prev-qtd');
+        const prevValor = document.getElementById('prev-valor');
+
+        function atualizar() {
+            const v = parseFloat(inputValor?.value) || 0;
+            const q = parseInt(inputQtd?.value) || 0;
+            const total = v * q;
+            prevTotal.textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            prevQtd.textContent = q;
+            prevValor.textContent = 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        }
+
+        if (inputValor) inputValor.addEventListener('input', atualizar);
+        if (inputQtd) inputQtd.addEventListener('input', atualizar);
+    });
+</script>
+{% endblock %}

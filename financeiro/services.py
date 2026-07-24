@@ -66,13 +66,25 @@ def telefone_formatar(telefone):
     return numeros
 
 
-def montar_mensagem_cobranca(cliente, parcelas):
+def montar_mensagem_cobranca(cliente, parcelas, empresa=None):
     total_devido = sum(p.valorconta or 0 for p in parcelas)
     partes = [f"Ola, *{cliente.nome}*!"]
     partes.append("Verificamos que constam as seguintes parcelas em aberto em seu nome:")
     for p in parcelas:
         partes.append(f"  - Venc.: *{p.vencimento.strftime('%d/%m/%Y')}* | Valor: R$ {p.valorconta:.2f}")
     partes.append(f"\n*Valor total pendente: R$ {total_devido:.2f}*")
+
+    if empresa and empresa.pix_chave:
+        partes.append("\n*DADOS PARA PAGAMENTO:*")
+        partes.append(f"Chave PIX: *{empresa.pix_chave}*")
+        if empresa.pix_titular:
+            partes.append(f"Titular: {empresa.pix_titular}")
+        if empresa.pix_banco:
+            partes.append(f"Banco: {empresa.pix_banco}")
+        if empresa.pix_agencia and empresa.pix_conta:
+            tipo = empresa.pix_tipo_conta or 'CC'
+            partes.append(f"Agencia: {empresa.pix_agencia} | Conta: {empresa.pix_conta} ({tipo})")
+
     partes.append("\nPara regularizar ou obter mais detalhes, por favor, entre em contato.")
     partes.append("\n\n*IGNORAR CASO O DEBITO JA TENHA SIDO PAGO, E O COMPROVANTE ENVIADO.*")
     return "\n".join(partes)

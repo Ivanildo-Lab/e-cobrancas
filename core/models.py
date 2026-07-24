@@ -5,6 +5,13 @@ class Empresa(models.Model):
     cnpj = models.CharField(max_length=20, blank=True, null=True)
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
     banner = models.ImageField(upload_to='banners/', blank=True, null=True)
+    pix_chave = models.CharField(max_length=100, blank=True, null=True, verbose_name='Chave PIX')
+    pix_titular = models.CharField(max_length=150, blank=True, null=True, verbose_name='Titular PIX')
+    pix_banco = models.CharField(max_length=100, blank=True, null=True, verbose_name='Banco')
+    pix_agencia = models.CharField(max_length=20, blank=True, null=True, verbose_name='Agencia')
+    pix_conta = models.CharField(max_length=30, blank=True, null=True, verbose_name='Conta')
+    pix_tipo_conta = models.CharField(max_length=20, blank=True, null=True, verbose_name='Tipo de Conta',
+        choices=[('CC', 'Conta Corrente'), ('CP', 'Poupanca'), ('CI', 'Investimento')])
 
     class Meta:
         verbose_name = 'Empresa'
@@ -12,6 +19,10 @@ class Empresa(models.Model):
 
     def __str__(self):
         return self.nome
+
+    @property
+    def tem_dados_pagamento(self):
+        return bool(self.pix_chave)
 
 
 class ModeloSaaS(models.Model):

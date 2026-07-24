@@ -20,6 +20,7 @@ from .forms import (
     FiltroParcelasForm, BaixaLoteForm
 )
 from cadastros.models import Cliente, Cidade
+from core.models import Empresa
 from .services import enviar_mensagem_whatsapp, telefone_formatar, montar_mensagem_cobranca
 
 logger = logging.getLogger(__name__)
@@ -359,7 +360,8 @@ def enviar_whatsapp_individual(request, pk):
         messages.warning(request, f'Telefone do cliente {cliente.nome} esta em formato invalido.')
         return redirect('financeiro:lista_parcelas')
 
-    mensagem = montar_mensagem_cobranca(cliente, parcelas_abertas)
+    empresa = Empresa.objects.first()
+    mensagem = montar_mensagem_cobranca(cliente, parcelas_abertas, empresa)
 
     thread = Thread(target=_enviar_whatsapp_background, args=(telefone, mensagem))
     thread.start()
@@ -391,6 +393,7 @@ def enviar_lote_whatsapp(request):
 
     enviados = 0
     erros = 0
+    empresa = Empresa.objects.first()
 
     for cliente, dados in clientes_notificar.items():
         if not cliente.telefone:
@@ -402,7 +405,7 @@ def enviar_lote_whatsapp(request):
             erros += 1
             continue
 
-        msg = montar_mensagem_cobranca(cliente, dados['parcelas'])
+        msg = montar_mensagem_cobranca(cliente, dados['parcelas'], empresa)
         thread = Thread(target=_enviar_whatsapp_background, args=(telefone, msg))
         thread.start()
         enviados += 1

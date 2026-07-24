@@ -303,7 +303,7 @@ def registrar_pagamento(request, pk):
                     'id': parcela.id,
                     'parcela': parcela.parcela,
                     'cliente_nome': parcela.cliente.nome,
-                    'valor': parcela.valorconta,
+                    'valor': float(parcela.valorconta or 0),
                 }],
                 'total': float(parcela.valorconta or 0),
             }
@@ -500,7 +500,7 @@ def baixa_lote(request):
                 row = cur.fetchone()
                 if row:
                     parcelas_baixadas.append({
-                        'id': pid, 'parcela': row[0], 'cliente_nome': row[1], 'valor': row[2]
+                        'id': pid, 'parcela': row[0], 'cliente_nome': row[1], 'valor': float(row[2] or 0)
                     })
 
     if parcelas_baixadas:

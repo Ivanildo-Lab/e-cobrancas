@@ -44,7 +44,10 @@
 </div>
 
 <div class="flex justify-between items-center mb-4">
-    <p class="text-sm text-gray-500">{{ clientes.paginator.count }} cliente(s) encontrado(s)</p>
+    <p class="text-sm text-gray-500">
+        <span class="font-bold text-slate-700">{{ total_geral }}</span> cliente(s) ativo(s) |
+        Exibindo <span class="font-bold">{{ clientes.paginator.count }}</span> resultado(s)
+    </p>
     <a href="{% url 'cadastros:criar_cliente' %}" class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition inline-flex items-center gap-2">
         <i class="fa fa-plus"></i> Novo Cliente
     </a>

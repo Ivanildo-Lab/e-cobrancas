@@ -118,9 +118,11 @@ def lista_clientes(request):
     paginator = Paginator(queryset, 15)
     clientes = paginator.get_page(page)
     cidades = Cidade.objects.all().order_by('nome')
+    total_geral = Cliente.objects.filter(ativo=True).count()
     return render(request, 'cadastros/cliente_lista.html', {
         'clientes': clientes, 'busca': busca, 'status_filter': status_filter,
-        'cidade_filter': cidade_filter, 'cidades': cidades, 'titulo': 'Clientes'
+        'cidade_filter': cidade_filter, 'cidades': cidades, 'titulo': 'Clientes',
+        'total_geral': total_geral,
     })
 
 

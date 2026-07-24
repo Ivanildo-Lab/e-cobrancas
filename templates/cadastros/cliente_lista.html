@@ -7,23 +7,47 @@
 
 {% block content %}
 <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <form method="get" class="flex gap-2 flex-1">
-            <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por nome ou contato..."
-                class="flex-1 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
-            <select name="status" class="border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="todos" {% if status_filter == 'todos' %}selected{% endif %}>Todos</option>
-                <option value="ativos" {% if status_filter == 'ativos' %}selected{% endif %}>Ativos</option>
-                <option value="inativos" {% if status_filter == 'inativos' %}selected{% endif %}>Inativos</option>
-            </select>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition">
-                <i class="fa fa-search"></i>
-            </button>
-        </form>
-        <a href="{% url 'cadastros:criar_cliente' %}" class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition inline-flex items-center gap-2">
-            <i class="fa fa-plus"></i> Novo Cliente
-        </a>
-    </div>
+    <form method="get" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar</label>
+                <input type="text" name="q" value="{{ busca }}" placeholder="Nome ou contato..."
+                    class="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Status</label>
+                <select name="status" class="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="todos" {% if status_filter == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="ativos" {% if status_filter == 'ativos' %}selected{% endif %}>Ativos</option>
+                    <option value="inativos" {% if status_filter == 'inativos' %}selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cidade</label>
+                <select name="cidade" class="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Todas as Cidades --</option>
+                    {% for cid in cidades %}
+                    <option value="{{ cid.id }}" {% if cidade_filter == cid.id|stringformat:"d" %}selected{% endif %}>{{ cid.nome }}/{{ cid.uf }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+                    <i class="fa fa-search mr-1"></i> Filtrar
+                </button>
+                <a href="{% url 'cadastros:lista_clientes' %}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition">
+                    <i class="fa fa-times mr-1"></i> Limpar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="flex justify-between items-center mb-4">
+    <p class="text-sm text-gray-500">{{ clientes.paginator.count }} cliente(s) encontrado(s)</p>
+    <a href="{% url 'cadastros:criar_cliente' %}" class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition inline-flex items-center gap-2">
+        <i class="fa fa-plus"></i> Novo Cliente
+    </a>
 </div>
 
 <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -84,17 +108,17 @@
 <nav class="mt-6 flex justify-center">
     <ul class="flex items-center gap-2">
         {% if clientes.has_previous %}
-            <li><a href="?page={{ clientes.previous_page_number }}&q={{ busca }}&status={{ status_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
+            <li><a href="?page={{ clientes.previous_page_number }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
         {% endif %}
         {% for num in clientes.paginator.page_range %}
             {% if clientes.number == num %}
                 <li><span class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{{ num }}</span></li>
             {% elif num > clientes.number|add:'-3' and num < clientes.number|add:'3' %}
-                <li><a href="?page={{ num }}&q={{ busca }}&status={{ status_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
+                <li><a href="?page={{ num }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
             {% endif %}
         {% endfor %}
         {% if clientes.has_next %}
-            <li><a href="?page={{ clientes.next_page_number }}&q={{ busca }}&status={{ status_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+            <li><a href="?page={{ clientes.next_page_number }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
         {% endif %}
     </ul>
 </nav>

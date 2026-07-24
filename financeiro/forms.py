@@ -1,6 +1,6 @@
 from django import forms
 from .models import Parcela
-from cadastros.models import Cliente
+from cadastros.models import Cliente, Cidade
 
 INPUT_CLASSES = 'w-full border border-gray-300 rounded p-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 SELECT_CLASSES = 'w-full border border-gray-300 rounded p-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500'
@@ -51,6 +51,13 @@ class RegistrarPagamentoForm(forms.Form):
     )
 
 
+class BaixaLoteForm(forms.Form):
+    data_pagamento = forms.DateField(
+        label='Data do Pagamento',
+        widget=forms.DateInput(attrs={'class': INPUT_CLASSES, 'type': 'date'}),
+    )
+
+
 class FiltroParcelasForm(forms.Form):
     status = forms.ChoiceField(
         choices=[
@@ -90,4 +97,28 @@ class FiltroParcelasForm(forms.Form):
         required=False,
         label='Pagamento (Fim)',
         widget=forms.DateInput(attrs={'class': INPUT_CLASSES, 'type': 'date'}),
+    )
+
+
+class FiltroClientesForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Buscar por nome ou contato...'}),
+    )
+    status = forms.ChoiceField(
+        choices=[
+            ('ativos', 'Ativos'),
+            ('inativos', 'Inativos'),
+            ('todos', 'Todos'),
+        ],
+        required=False,
+        initial='ativos',
+        widget=forms.Select(attrs={'class': SELECT_CLASSES}),
+    )
+    cidade = forms.ModelChoiceField(
+        queryset=Cidade.objects.all().order_by('nome'),
+        required=False,
+        label='Cidade',
+        empty_label='-- Todas as Cidades --',
+        widget=forms.Select(attrs={'class': SELECT_CLASSES}),
     )

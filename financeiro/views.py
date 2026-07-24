@@ -16,7 +16,8 @@ from dateutil.relativedelta import relativedelta
 
 from .models import Parcela
 from .forms import (
-    GerarParcelasForm, EditarParcelaForm, RegistrarPagamentoForm, FiltroParcelasForm
+    GerarParcelasForm, EditarParcelaForm, RegistrarPagamentoForm,
+    FiltroParcelasForm, BaixaLoteForm
 )
 from cadastros.models import Cliente, Cidade
 from .services import enviar_mensagem_whatsapp, telefone_formatar, montar_mensagem_cobranca
@@ -447,5 +448,88 @@ def gerar_pdf(request):
         response['Content-Disposition'] = f'inline; filename=parcelas_{timezone.now().strftime("%Y%m%d")}.pdf'
         return response
     except ImportError:
-        messages.warning(request, 'WeasyPrint nao instalado. Instale com: pip install weasyprint')
+        messages.warning(request, 'WeasyPrint nao instalado. Usando impressao do navegador.')
+        return render(request, 'financeiro/parcela_pdf.html', {
+            'parcelas': parcelas, 'totais': totais, 'titulo': 'Relatorio de Parcelas'
+        })
+
+
+@login_required
+def baixa_lote(request):
+    if request.method != 'POST':
         return redirect('financeiro:lista_parcelas')
+
+    ids_selecionados = request.POST.getlist('parcelas_ids')
+    data_pagamento = request.POST.get('data_pagamento')
+
+    if not ids_selecionados:
+        messages.warning(request, 'Nenhuma parcela selecionada.')
+        return redirect('financeiro:lista_parcelas')
+
+    if not data_pagamento:
+        messages.warning(request, 'Informe a data de pagamento.')
+        return redirect('financeiro:lista_parcelas')
+
+    parcelas_baixadas = []
+    with connection.cursor() as cur:
+        for pid in ids_selecionados:
+            cur.execute(
+                "UPDATE tbl_contasareceber SET pagamento=%s, situacao='Liquidada' WHERE id=%s AND situacao='Aberta'",
+                [data_pagamento, pid]
+            )
+            if cur.rowcount > 0:
+                cur.execute(
+                    "SELECT p.parcela, c.nome, p.valorconta FROM tbl_contasareceber p JOIN tbl_clientes c ON p.cliente=c.id WHERE p.id=%s",
+                    [pid]
+                )
+                row = cur.fetchone()
+                if row:
+                    parcelas_baixadas.append({
+                        'id': pid, 'parcela': row[0], 'cliente_nome': row[1], 'valor': row[2]
+                    })
+
+    if parcelas_baixadas:
+        messages.success(request, f'{len(parcelas_baixadas)} parcela(s) baixada(s) com sucesso!')
+        request.session['recibo_data'] = {
+            'data_pagamento': data_pagamento,
+            'parcelas': parcelas_baixadas,
+            'total': sum(float(p['valor']) for p in parcelas_baixadas),
+        }
+        return redirect('financeiro:recibo_lote')
+    else:
+        messages.warning(request, 'Nenhuma parcela aberta encontrada para baixar.')
+
+    return redirect('financeiro:lista_parcelas')
+
+
+@login_required
+def recibo_lote(request):
+    recibo_data = request.session.pop('recibo_data', None)
+    if not recibo_data:
+        messages.warning(request, 'Nenhum dado de recibo disponivel.')
+        return redirect('financeiro:lista_parcelas')
+    return render(request, 'financeiro/recibo_lote.html', {
+        'recibo': recibo_data, 'titulo': 'Recibo de Pagamento'
+    })
+
+
+@login_required
+def recibo_individual(request, pk):
+    parcela = get_object_or_404(Parcela, pk=pk)
+    if parcela.situacao.lower() != 'liquidada':
+        messages.warning(request, 'Apenas parcelas liquidadas podem gerar recibo.')
+        return redirect('financeiro:lista_parcelas')
+
+    recibo_data = {
+        'data_pagamento': parcela.pagamento.strftime('%d/%m/%Y') if parcela.pagamento else '-',
+        'parcelas': [{
+            'id': parcela.id,
+            'parcela': parcela.parcela,
+            'cliente_nome': parcela.cliente.nome,
+            'valor': parcela.valorconta,
+        }],
+        'total': float(parcela.valorconta or 0),
+    }
+    return render(request, 'financeiro/recibo_lote.html', {
+        'recibo': recibo_data, 'titulo': 'Recibo de Pagamento'
+    })

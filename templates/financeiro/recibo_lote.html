@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo de Pagamento</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #333; padding: 20mm; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { font-size: 18px; margin-bottom: 5px; }
+        .header p { font-size: 10px; color: #666; }
+        .info-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .info-label { font-weight: bold; color: #666; font-size: 10px; text-transform: uppercase; }
+        .info-value { font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f0f0f0; padding: 8px; text-align: left; font-size: 10px; text-transform: uppercase; border: 1px solid #ddd; }
+        td { padding: 8px; border: 1px solid #ddd; font-size: 11px; }
+        .valor { text-align: right; font-weight: bold; }
+        .total-box { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px; }
+        .total-label { font-size: 10px; text-transform: uppercase; color: #666; }
+        .total-valor { font-size: 20px; font-weight: bold; color: #2e7d32; }
+        .footer { text-align: center; margin-top: 30px; font-size: 9px; color: #999; }
+        .assinatura { margin-top: 40px; text-align: center; }
+        .assinatura-linha { width: 250px; border-top: 1px solid #333; margin: 0 auto; padding-top: 5px; font-size: 10px; }
+        @media print {
+            body { padding: 10mm; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 15px;">
+        <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+            Imprimir Recibo
+        </button>
+        <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-left: 10px;">
+            Fechar
+        </button>
+    </div>
+
+    <div class="header">
+        <h1>RECIBO DE PAGAMENTO</h1>
+        <p>e-Cobrancas - Sistema de Gestao de Cobrancas</p>
+    </div>
+
+    <div class="info-box">
+        <div class="info-row">
+            <div>
+                <span class="info-label">Data do Pagamento:</span>
+                <span class="info-value">{{ recibo.data_pagamento }}</span>
+            </div>
+            <div>
+                <span class="info-label">Emissao:</span>
+                <span class="info-value">{% now "d/m/Y H:i" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Parcela</th>
+                <th class="valor">Valor (R$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in recibo.parcelas %}
+            <tr>
+                <td>{{ p.cliente_nome }}</td>
+                <td>{{ p.parcela }}</td>
+                <td class="valor">{{ p.valor|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-box">
+        <div class="total-label">Valor Total Pago</div>
+        <div class="total-valor">R$ {{ recibo.total|floatformat:2 }}</div>
+    </div>
+
+    <p style="text-align: center; font-size: 11px; margin-bottom: 10px;">
+        Declaro que recebi o valor acima referente ao pagamento(s) descrito(s) neste recibo.
+    </p>
+
+    <div class="assinatura">
+        <div class="assinatura-linha">
+            Assinatura / Carimbo
+        </div>
+    </div>
+
+    <div class="footer">
+        e-Cobrancas - Documento gerado automaticamente em {% now "d/m/Y H:i" %}
+    </div>
+</body>
+</html>

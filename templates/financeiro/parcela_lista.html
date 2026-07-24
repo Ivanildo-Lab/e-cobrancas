@@ -65,6 +65,10 @@
             <i class="fab fa-whatsapp"></i> Enviar Lembretes (Lote)
         </button>
     </form>
+    <button type="button" onclick="abrirModalBaixaLote()"
+        class="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-200 transition inline-flex items-center gap-2">
+        <i class="fa fa-check-double"></i> Baixar Selecionadas
+    </button>
     {% endif %}
 </div>
 
@@ -75,11 +79,17 @@
 </div>
 
 <!-- Tabela -->
+<form id="form-baixa-lote" method="post" action="{% url 'financeiro:baixa_lote' %}">
+{% csrf_token %}
 <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
+                    <th class="text-center px-2 py-3">
+                        <input type="checkbox" id="check-all" onclick="toggleAll(this)"
+                            class="w-4 h-4 accent-blue-600 cursor-pointer">
+                    </th>
                     <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Cliente</th>
                     <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Parcela</th>
                     <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Vencimento</th>
@@ -93,6 +103,12 @@
                 {% for parcela in parcelas %}
                 {% with sit=parcela.situacao|lower %}
                 <tr class="{% if sit == 'liquidada' %}bg-green-50/50{% elif sit == 'aberta' and parcela.esta_vencida %}bg-red-50/50{% else %}hover:bg-slate-50{% endif %} transition">
+                    <td class="text-center px-2 py-3">
+                        {% if sit == 'aberta' %}
+                        <input type="checkbox" name="parcelas_ids" value="{{ parcela.id }}"
+                            class="parcela-check w-4 h-4 accent-blue-600 cursor-pointer">
+                        {% endif %}
+                    </td>
                     <td class="px-4 py-3 font-bold text-slate-700 max-w-[150px] truncate">{{ parcela.cliente.nome }}</td>
                     <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ parcela.parcela }}</td>
                     <td class="px-4 py-3 text-slate-600">{{ parcela.vencimento|date:"d/m/Y" }}</td>
@@ -135,6 +151,11 @@
                                 </a>
                                 {% endif %}
                             {% elif sit == 'liquidada' %}
+                                <!-- Recibo -->
+                                <a href="{% url 'financeiro:recibo_individual' parcela.pk %}" target="_blank"
+                                    class="text-purple-500 hover:text-purple-700 p-1" title="Imprimir Recibo">
+                                    <i class="fa fa-receipt"></i>
+                                </a>
                                 <!-- Desfazer Liquidacao -->
                                 <button type="button" class="text-amber-500 hover:text-amber-700 p-1" title="Desfazer Liquidacao"
                                     onclick="document.getElementById('modal-desfazer-{{ parcela.id }}').classList.remove('hidden')">
@@ -149,7 +170,7 @@
                 {% endwith %}
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                    <td colspan="8" class="px-6 py-12 text-center text-gray-400">
                         <i class="fa fa-file-invoice text-3xl mb-2 block"></i>
                         Nenhuma parcela encontrada com os filtros aplicados.
                     </td>
@@ -159,10 +180,10 @@
         </table>
     </div>
 </div>
+</form>
 
 <!-- Paginacao -->
 {% if parcelas.has_other_pages %}
-{% with base_url=request.GET.urlencode %}
 <nav class="mt-6 flex justify-center">
     <ul class="flex items-center gap-2">
         {% if parcelas.has_previous %}
@@ -180,8 +201,29 @@
         {% endif %}
     </ul>
 </nav>
-{% endwith %}
 {% endif %}
+
+<!-- Modal Baixa em Lote -->
+<div id="modal-baixa-lote" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <h3 class="text-lg font-black text-slate-800 mb-4"><i class="fa fa-check-double text-blue-500 mr-2"></i> Baixar Parcelas Selecionadas</h3>
+        <p class="text-sm text-gray-600 mb-4">Selecione as parcelas na tabela e informe a data de pagamento.</p>
+        <div class="bg-slate-50 rounded-xl p-4 mb-4">
+            <p class="text-sm"><span class="font-bold text-gray-400">Parcelas selecionadas:</span> <span id="qtd-selecionadas" class="font-bold text-blue-600">0</span></p>
+        </div>
+        <input type="hidden" name="data_pagamento" id="data-pagamento-lote" value="{% now 'Y-m-d' %}">
+        <div class="mb-4">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data do Pagamento</label>
+            <input type="date" id="data-pagamento-input" value="{% now 'Y-m-d' %}"
+                onchange="document.getElementById('data-pagamento-lote').value = this.value"
+                class="w-full border border-gray-300 rounded-xl p-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button type="button" onclick="fecharModalBaixaLote()" class="px-6 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition">Voltar</button>
+            <button type="submit" form="form-baixa-lote" onclick="return confirmarBaixaLote()" class="px-8 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">Confirmar Baixa</button>
+        </div>
+    </div>
+</div>
 
 <!-- MODAIS -->
 {% for parcela in parcelas %}
@@ -249,4 +291,41 @@
 {% endif %}
 {% endwith %}
 {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleAll(source) {
+    document.querySelectorAll('.parcela-check').forEach(cb => cb.checked = source.checked);
+}
+
+function abrirModalBaixaLote() {
+    const checks = document.querySelectorAll('.parcela-check:checked');
+    if (checks.length === 0) {
+        alert('Selecione pelo menos uma parcela na tabela.');
+        return;
+    }
+    document.getElementById('qtd-selecionadas').textContent = checks.length;
+    document.getElementById('modal-baixa-lote').classList.remove('hidden');
+}
+
+function fecharModalBaixaLote() {
+    document.getElementById('modal-baixa-lote').classList.add('hidden');
+}
+
+function confirmarBaixaLote() {
+    const checks = document.querySelectorAll('.parcela-check:checked');
+    if (checks.length === 0) {
+        alert('Nenhuma parcela selecionada.');
+        return false;
+    }
+    const data = document.getElementById('data-pagamento-input').value;
+    if (!data) {
+        alert('Informe a data de pagamento.');
+        return false;
+    }
+    document.getElementById('data-pagamento-lote').value = data;
+    return confirm(`Confirma baixa de ${checks.length} parcela(s) com data ${data}?`);
+}
+</script>
 {% endblock %}

@@ -14,4 +14,7 @@ urlpatterns = [
     path('parcelas/whatsapp/<int:pk>/', views.enviar_whatsapp_individual, name='enviar_whatsapp_individual'),
     path('parcelas/whatsapp/lote/', views.enviar_lote_whatsapp, name='enviar_lote_whatsapp'),
     path('parcelas/pdf/', views.gerar_pdf, name='gerar_pdf'),
+    path('parcelas/baixa-lote/', views.baixa_lote, name='baixa_lote'),
+    path('parcelas/recibo-lote/', views.recibo_lote, name='recibo_lote'),
+    path('parcelas/<int:pk>/recibo/', views.recibo_individual, name='recibo_individual'),
 ]

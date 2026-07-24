@@ -103,19 +103,24 @@ def lista_clientes(request):
     page = request.GET.get('page', 1)
     busca = request.GET.get('q', '')
     status_filter = request.GET.get('status', 'ativos')
+    cidade_filter = request.GET.get('cidade', '')
     queryset = Cliente.objects.select_related('cidade').all()
     if status_filter == 'ativos':
         queryset = queryset.filter(ativo=True)
     elif status_filter == 'inativos':
         queryset = queryset.filter(ativo=False)
+    if cidade_filter:
+        queryset = queryset.filter(cidade_id=cidade_filter)
     if busca:
         queryset = queryset.filter(
             Q(nome__icontains=busca) | Q(contato__icontains=busca)
         )
     paginator = Paginator(queryset, 15)
     clientes = paginator.get_page(page)
+    cidades = Cidade.objects.all().order_by('nome')
     return render(request, 'cadastros/cliente_lista.html', {
-        'clientes': clientes, 'busca': busca, 'status_filter': status_filter, 'titulo': 'Clientes'
+        'clientes': clientes, 'busca': busca, 'status_filter': status_filter,
+        'cidade_filter': cidade_filter, 'cidades': cidades, 'titulo': 'Clientes'
     })
 
 

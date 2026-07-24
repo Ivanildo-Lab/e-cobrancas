@@ -427,15 +427,17 @@ def gerar_pdf(request):
 
     parcelas = query.all()
 
-    totais = {'aberto': Decimal('0.00'), 'pago': Decimal('0.00'), 'cancelado': Decimal('0.00')}
+    totais = {'aberto': Decimal('0.00'), 'pago': Decimal('0.00'), 'cancelado': Decimal('0.00'), 'total_geral': Decimal('0.00')}
     for p in parcelas:
         sit = (p.situacao or '').lower()
+        valor = p.valorconta or Decimal('0.00')
         if sit == 'liquidada':
-            totais['pago'] += p.valorconta or Decimal('0.00')
+            totais['pago'] += valor
         elif sit == 'aberta':
-            totais['aberto'] += p.valorconta
+            totais['aberto'] += valor
         elif 'cancel' in sit:
-            totais['cancelado'] += p.valorconta
+            totais['cancelado'] += valor
+        totais['total_geral'] += valor
 
     try:
         from weasyprint import HTML

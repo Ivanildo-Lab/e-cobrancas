@@ -3,96 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <title>Recibo de Pagamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; font-size: 12px; color: #333; padding: 20mm; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; margin-bottom: 5px; }
-        .header p { font-size: 10px; color: #666; }
-        .info-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .info-label { font-weight: bold; color: #666; font-size: 10px; text-transform: uppercase; }
-        .info-value { font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th { background: #f0f0f0; padding: 8px; text-align: left; font-size: 10px; text-transform: uppercase; border: 1px solid #ddd; }
-        td { padding: 8px; border: 1px solid #ddd; font-size: 11px; }
-        .valor { text-align: right; font-weight: bold; }
-        .total-box { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px; }
-        .total-label { font-size: 10px; text-transform: uppercase; color: #666; }
-        .total-valor { font-size: 20px; font-weight: bold; color: #2e7d32; }
-        .footer { text-align: center; margin-top: 30px; font-size: 9px; color: #999; }
-        .assinatura { margin-top: 40px; text-align: center; }
-        .assinatura-linha { width: 250px; border-top: 1px solid #333; margin: 0 auto; padding-top: 5px; font-size: 10px; }
         @media print {
-            body { padding: 10mm; }
-            .no-print { display: none; }
+            body { -webkit-print-color-adjust: exact; font-size: 9pt; }
+            .no-print { display: none !important; }
+            @page { margin: 1.5cm; }
         }
     </style>
 </head>
-<body>
-    <div class="no-print" style="text-align: center; margin-bottom: 15px;">
-        <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-            Imprimir Recibo
-        </button>
-        <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-left: 10px;">
-            Fechar
-        </button>
-    </div>
+<body class="bg-gray-100 p-4 print:bg-white print:p-0 text-gray-800 font-sans">
 
-    <div class="header">
-        <h1>RECIBO DE PAGAMENTO</h1>
-        <p>e-Cobrancas - Sistema de Gestao de Cobrancas</p>
-    </div>
+    <div class="max-w-2xl mx-auto bg-white shadow-lg print:shadow-none print:w-full relative pb-10">
 
-    <div class="info-box">
-        <div class="info-row">
-            <div>
-                <span class="info-label">Data do Pagamento:</span>
-                <span class="info-value">{{ recibo.data_pagamento }}</span>
+        <!-- CABECALHO -->
+        <div class="px-6 py-4 border-b-2 border-gray-800 flex justify-between items-start">
+            <div class="flex items-center gap-3">
+                <div class="h-12 w-12 bg-gray-800 text-white flex items-center justify-center font-bold rounded-lg text-xl">
+                    EC
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold uppercase tracking-wide text-gray-800 leading-tight">e-Cobrancas</h1>
+                    <p class="text-[10px] text-gray-500">Sistema de Gestao de Cobrancas</p>
+                </div>
             </div>
-            <div>
-                <span class="info-label">Emissao:</span>
-                <span class="info-value">{% now "d/m/Y H:i" %}</span>
+            <div class="text-right">
+                <div class="bg-green-100 border border-green-300 rounded-lg px-4 py-2">
+                    <p class="text-[10px] text-green-600 uppercase font-bold">Documento Validado</p>
+                    <p class="text-xs font-bold text-green-700">PAGO</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Cliente</th>
-                <th>Parcela</th>
-                <th class="valor">Valor (R$)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in recibo.parcelas %}
-            <tr>
-                <td>{{ p.cliente_nome }}</td>
-                <td>{{ p.parcela }}</td>
-                <td class="valor">{{ p.valor|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div class="total-box">
-        <div class="total-label">Valor Total Pago</div>
-        <div class="total-valor">R$ {{ recibo.total|floatformat:2 }}</div>
-    </div>
-
-    <p style="text-align: center; font-size: 11px; margin-bottom: 10px;">
-        Declaro que recebi o valor acima referente ao pagamento(s) descrito(s) neste recibo.
-    </p>
-
-    <div class="assinatura">
-        <div class="assinatura-linha">
-            Assinatura / Carimbo
+        <!-- TITULO -->
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 text-center">
+            <h2 class="text-lg font-bold uppercase tracking-widest text-gray-700">Recibo de Pagamento</h2>
         </div>
-    </div>
 
-    <div class="footer">
-        e-Cobrancas - Documento gerado automaticamente em {% now "d/m/Y H:i" %}
+        <div class="p-6">
+
+            <!-- INFO -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Data do Pagamento</p>
+                    <p class="text-sm font-bold text-gray-800">{{ recibo.data_pagamento }}</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Data de Emissao</p>
+                    <p class="text-sm font-bold text-gray-800">{% now "d/m/Y H:i" %}</p>
+                </div>
+            </div>
+
+            <!-- TABELA -->
+            <table class="w-full text-[10px] mb-6">
+                <thead>
+                    <tr class="text-[9px] text-gray-400 uppercase border-b border-gray-300">
+                        <th class="py-1 text-left font-medium">Cliente</th>
+                        <th class="py-1 text-left font-medium w-36">Parcela</th>
+                        <th class="py-1 text-right font-medium w-28">Valor (R$)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for p in recibo.parcelas %}
+                    <tr>
+                        <td class="py-2 font-bold text-gray-800">{{ p.cliente_nome }}</td>
+                        <td class="py-2 font-mono font-bold text-gray-700">{{ p.parcela }}</td>
+                        <td class="py-2 text-right font-bold text-gray-700">R$ {{ p.valor|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- TOTAL -->
+            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center mb-6">
+                <p class="text-[10px] text-green-600 uppercase font-bold mb-1">Valor Total Pago</p>
+                <p class="text-2xl font-bold text-green-700">R$ {{ recibo.total|floatformat:2 }}</p>
+            </div>
+
+            <!-- DECLARACAO -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8">
+                <p class="text-[10px] text-gray-600 text-center leading-relaxed">
+                    Declaro que recebi o valor acima referente ao(s) pagamento(s) descrito(s) neste recibo, dando plena quitacao ao(s) referido(s) titulo(s).
+                </p>
+            </div>
+
+            <!-- ASSINATURA -->
+            <div class="flex justify-center mt-10">
+                <div class="text-center">
+                    <div class="w-64 border-t border-gray-400 mb-1"></div>
+                    <p class="text-[10px] text-gray-500 font-bold">Assinatura / Carimbo do Recebedor</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rodape -->
+        <div class="px-6 py-3 border-t border-gray-200 text-center text-[9px] text-gray-400">
+            e-Cobrancas - Documento gerado automaticamente em {% now "d/m/Y H:i" %}
+        </div>
+
+        <!-- Botoes Flutuantes -->
+        <div class="fixed bottom-8 right-8 no-print flex gap-3">
+            <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-full shadow-lg flex items-center border border-gray-600 text-xs">
+                <i class="fas fa-print mr-2"></i> Imprimir
+            </button>
+            <button onclick="window.close()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-full shadow-lg flex items-center border border-gray-400 text-xs">
+                <i class="fas fa-times mr-2"></i> Fechar
+            </button>
+        </div>
+
     </div>
 </body>
 </html>

@@ -17,6 +17,11 @@
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cliente</label>
                 {{ form.cliente }}
+                <datalist id="clientes-list">
+                    {% for cid, nome in clientes_autocomplete %}
+                        <option value="{{ nome }}" data-id="{{ cid }}">
+                    {% endfor %}
+                </datalist>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Venc. Inicio</label>

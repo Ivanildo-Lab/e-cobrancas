@@ -39,9 +39,9 @@ def _construir_query_parcelas(filtros):
 
     query = Parcela.objects.select_related('cliente', 'cliente__cidade').filter(cliente__ativo=True)
 
-    cliente_id = filtros.get('cliente')
-    if cliente_id:
-        query = query.filter(cliente_id=cliente_id)
+    cliente_nome = filtros.get('cliente', '').strip()
+    if cliente_nome:
+        query = query.filter(cliente__nome__icontains=cliente_nome)
 
     venc_inicio = filtros.get('venc_inicio')
     venc_fim = filtros.get('venc_fim')
@@ -223,12 +223,15 @@ def lista_parcelas(request):
     paginator = Paginator(query, 15)
     parcelas = paginator.get_page(page)
 
+    clientes_ativos = Cliente.objects.filter(ativo=True).order_by('nome').values_list('id', 'nome')
+
     return render(request, 'financeiro/parcela_lista.html', {
         'titulo': 'Lista de Parcelas',
         'form': form,
         'parcelas': parcelas,
         'totais': totais,
         'current_filters': filtros,
+        'clientes_autocomplete': clientes_ativos,
     })
 
 

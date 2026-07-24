@@ -71,12 +71,10 @@ class FiltroParcelasForm(forms.Form):
         initial='aberta',
         widget=forms.Select(attrs={'class': SELECT_CLASSES}),
     )
-    cliente = forms.ModelChoiceField(
-        queryset=Cliente.objects.filter(ativo=True).order_by('nome'),
+    cliente = forms.CharField(
         required=False,
         label='Cliente',
-        empty_label='-- Todos os Clientes --',
-        widget=forms.Select(attrs={'class': SELECT_CLASSES}),
+        widget=forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Digite o nome do cliente...', 'list': 'clientes-list'}),
     )
     venc_inicio = forms.DateField(
         required=False,

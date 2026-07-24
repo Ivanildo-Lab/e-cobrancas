@@ -297,8 +297,18 @@ def registrar_pagamento(request, pk):
                     "UPDATE tbl_contasareceber SET pagamento=%s, situacao='Liquidada' WHERE id=%s",
                     [data_pag, pk]
                 )
-            messages.success(request, f'Pagamento da parcela {parcela.parcela} registrado com sucesso!')
+            request.session['recibo_data'] = {
+                'data_pagamento': data_pag.strftime('%d/%m/%Y') if hasattr(data_pag, 'strftime') else str(data_pag),
+                'parcelas': [{
+                    'id': parcela.id,
+                    'parcela': parcela.parcela,
+                    'cliente_nome': parcela.cliente.nome,
+                    'valor': parcela.valorconta,
+                }],
+                'total': float(parcela.valorconta or 0),
+            }
             _verificar_ultima_parcela(request, parcela.cliente_id)
+            return redirect('financeiro:recibo_lote')
         else:
             messages.error(request, 'Dados invalidos. Verifique data e valor.')
     return redirect('financeiro:lista_parcelas')

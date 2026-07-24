@@ -3,116 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <title>Recibo de Pagamento</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @media print {
-            body { -webkit-print-color-adjust: exact; font-size: 9pt; }
-            .no-print { display: none !important; }
-            @page { margin: 1.5cm; }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1f2937; background: #f3f4f6; padding: 16px; }
+        @media print { body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; } .no-print { display: none !important; } @page { margin: 1.5cm; } }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); position: relative; padding-bottom: 40px; }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 24px; border-bottom: 3px solid #1f2937; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .logo-box { width: 48px; height: 48px; background: #1f2937; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 8px; font-size: 20px; }
+        .header-title { font-size: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #111827; line-height: 1.2; }
+        .header-sub { font-size: 10px; color: #6b7280; }
+        .badge-pago { background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 8px 16px; text-align: center; }
+        .badge-label { font-size: 10px; color: #16a34a; text-transform: uppercase; font-weight: bold; }
+        .badge-valor { font-size: 13px; font-weight: bold; color: #15803d; }
+
+        .titulo { padding: 16px 24px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; text-align: center; }
+        .titulo h2 { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: #374151; }
+
+        .content { padding: 24px; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .info-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+        .info-label { font-size: 9px; text-transform: uppercase; font-weight: bold; color: #9ca3af; margin-bottom: 4px; }
+        .info-value { font-size: 13px; font-weight: bold; color: #111827; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 24px; }
+        thead tr { border-bottom: 1px solid #d1d5db; }
+        th { padding: 4px 0; text-align: left; font-size: 9px; text-transform: uppercase; color: #9ca3af; font-weight: 500; }
+        th.right { text-align: right; }
+        tbody tr { border-bottom: 1px solid #f3f4f6; }
+        td { padding: 8px 0; }
+        td.right { text-align: right; }
+        td.bold { font-weight: bold; }
+        td.mono { font-family: 'Courier New', monospace; font-weight: bold; color: #374151; }
+
+        .total-box { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px; }
+        .total-label { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #16a34a; margin-bottom: 4px; }
+        .total-value { font-size: 24px; font-weight: bold; color: #15803d; }
+
+        .declaracao { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 32px; }
+        .declaracao p { font-size: 10px; color: #4b5563; text-align: center; line-height: 1.5; }
+
+        .assinatura { display: flex; justify-content: center; margin-top: 40px; }
+        .assinatura-box { text-align: center; }
+        .assinatura-linha { width: 260px; border-top: 1px solid #9ca3af; margin-bottom: 4px; }
+        .assinatura-texto { font-size: 10px; color: #6b7280; font-weight: bold; }
+
+        .footer { padding: 12px 24px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 9px; color: #9ca3af; }
+        .btn-print { position: fixed; bottom: 32px; right: 32px; background: #1f2937; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); }
+        .btn-print:hover { background: #111827; }
     </style>
 </head>
-<body class="bg-gray-100 p-4 print:bg-white print:p-0 text-gray-800 font-sans">
+<body>
+    <div class="container">
 
-    <div class="max-w-2xl mx-auto bg-white shadow-lg print:shadow-none print:w-full relative pb-10">
-
-        <!-- CABECALHO -->
-        <div class="px-6 py-4 border-b-2 border-gray-800 flex justify-between items-start">
-            <div class="flex items-center gap-3">
-                <div class="h-12 w-12 bg-gray-800 text-white flex items-center justify-center font-bold rounded-lg text-xl">
-                    EC
-                </div>
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-box">EC</div>
                 <div>
-                    <h1 class="text-xl font-bold uppercase tracking-wide text-gray-800 leading-tight">e-Cobrancas</h1>
-                    <p class="text-[10px] text-gray-500">Sistema de Gestao de Cobrancas</p>
+                    <div class="header-title">e-Cobrancas</div>
+                    <div class="header-sub">Sistema de Gestao de Cobrancas</div>
                 </div>
             </div>
-            <div class="text-right">
-                <div class="bg-green-100 border border-green-300 rounded-lg px-4 py-2">
-                    <p class="text-[10px] text-green-600 uppercase font-bold">Documento Validado</p>
-                    <p class="text-xs font-bold text-green-700">PAGO</p>
-                </div>
+            <div class="badge-pago">
+                <div class="badge-label">Documento Validado</div>
+                <div class="badge-valor">PAGO</div>
             </div>
         </div>
 
-        <!-- TITULO -->
-        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 text-center">
-            <h2 class="text-lg font-bold uppercase tracking-widest text-gray-700">Recibo de Pagamento</h2>
+        <div class="titulo">
+            <h2>Recibo de Pagamento</h2>
         </div>
 
-        <div class="p-6">
+        <div class="content">
 
-            <!-- INFO -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Data do Pagamento</p>
-                    <p class="text-sm font-bold text-gray-800">{{ recibo.data_pagamento }}</p>
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">Data do Pagamento</div>
+                    <div class="info-value">{{ recibo.data_pagamento }}</div>
                 </div>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Data de Emissao</p>
-                    <p class="text-sm font-bold text-gray-800">{% now "d/m/Y H:i" %}</p>
+                <div class="info-box">
+                    <div class="info-label">Data de Emissao</div>
+                    <div class="info-value">{% now "d/m/Y H:i" %}</div>
                 </div>
             </div>
 
-            <!-- TABELA -->
-            <table class="w-full text-[10px] mb-6">
+            <table>
                 <thead>
-                    <tr class="text-[9px] text-gray-400 uppercase border-b border-gray-300">
-                        <th class="py-1 text-left font-medium">Cliente</th>
-                        <th class="py-1 text-left font-medium w-36">Parcela</th>
-                        <th class="py-1 text-right font-medium w-28">Valor (R$)</th>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Parcela</th>
+                        <th class="right">Valor (R$)</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody>
                     {% for p in recibo.parcelas %}
                     <tr>
-                        <td class="py-2 font-bold text-gray-800">{{ p.cliente_nome }}</td>
-                        <td class="py-2 font-mono font-bold text-gray-700">{{ p.parcela }}</td>
-                        <td class="py-2 text-right font-bold text-gray-700">R$ {{ p.valor|floatformat:2 }}</td>
+                        <td class="bold">{{ p.cliente_nome }}</td>
+                        <td class="mono">{{ p.parcela }}</td>
+                        <td class="right bold">R$ {{ p.valor|floatformat:2 }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
 
-            <!-- TOTAL -->
-            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center mb-6">
-                <p class="text-[10px] text-green-600 uppercase font-bold mb-1">Valor Total Pago</p>
-                <p class="text-2xl font-bold text-green-700">R$ {{ recibo.total|floatformat:2 }}</p>
+            <div class="total-box">
+                <div class="total-label">Valor Total Pago</div>
+                <div class="total-value">R$ {{ recibo.total|floatformat:2 }}</div>
             </div>
 
-            <!-- DECLARACAO -->
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8">
-                <p class="text-[10px] text-gray-600 text-center leading-relaxed">
-                    Declaro que recebi o valor acima referente ao(s) pagamento(s) descrito(s) neste recibo, dando plena quitacao ao(s) referido(s) titulo(s).
-                </p>
+            <div class="declaracao">
+                <p>Declaro que recebi o valor acima referente ao(s) pagamento(s) descrito(s) neste recibo, dando plena quitacao ao(s) referido(s) titulo(s).</p>
             </div>
 
-            <!-- ASSINATURA -->
-            <div class="flex justify-center mt-10">
-                <div class="text-center">
-                    <div class="w-64 border-t border-gray-400 mb-1"></div>
-                    <p class="text-[10px] text-gray-500 font-bold">Assinatura / Carimbo do Recebedor</p>
+            <div class="assinatura">
+                <div class="assinatura-box">
+                    <div class="assinatura-linha"></div>
+                    <div class="assinatura-texto">Assinatura / Carimbo do Recebedor</div>
                 </div>
             </div>
 
         </div>
 
-        <!-- Rodape -->
-        <div class="px-6 py-3 border-t border-gray-200 text-center text-[9px] text-gray-400">
+        <div class="footer">
             e-Cobrancas - Documento gerado automaticamente em {% now "d/m/Y H:i" %}
         </div>
-
-        <!-- Botoes Flutuantes -->
-        <div class="fixed bottom-8 right-8 no-print flex gap-3">
-            <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-full shadow-lg flex items-center border border-gray-600 text-xs">
-                <i class="fas fa-print mr-2"></i> Imprimir
-            </button>
-            <button onclick="window.close()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-full shadow-lg flex items-center border border-gray-400 text-xs">
-                <i class="fas fa-times mr-2"></i> Fechar
-            </button>
-        </div>
-
     </div>
+
+    <button class="btn-print no-print" onclick="window.print()">
+        Imprimir Recibo
+    </button>
 </body>
 </html>

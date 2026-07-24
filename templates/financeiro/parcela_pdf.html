@@ -3,127 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <title>Relatório de Parcelas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @media print {
-            body { -webkit-print-color-adjust: exact; font-size: 9pt; }
-            .no-print { display: none !important; }
-            @page { margin: 1cm; }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1f2937; background: #f3f4f6; padding: 16px; }
+        @media print { body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; } .no-print { display: none !important; } @page { margin: 1cm; } }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); min-height: 100vh; position: relative; padding-bottom: 40px; }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 24px; border-bottom: 1px solid #e5e7eb; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .logo-box { width: 40px; height: 40px; background: #1f2937; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 6px; font-size: 16px; }
+        .header-title { font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #111827; line-height: 1.2; }
+        .header-sub { font-size: 10px; color: #6b7280; }
+        .header-right { text-align: right; }
+        .header-right h2 { font-size: 15px; font-weight: 600; color: #374151; }
+        .header-right p { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+
+        .summary { padding: 12px 24px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .summary-card { border-radius: 6px; padding: 12px; text-align: center; border: 1px solid; }
+        .card-blue { background: #eff6ff; border-color: #bfdbfe; }
+        .card-green { background: #f0fdf4; border-color: #bbf7d0; }
+        .card-emerald { background: #ecfdf5; border-color: #a7f3d0; }
+        .card-gray { background: #f9fafb; border-color: #e5e7eb; }
+        .card-label { font-size: 9px; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+        .card-value { font-size: 22px; font-weight: bold; }
+        .text-blue { color: #1d4ed8; }
+        .text-green { color: #15803d; }
+        .text-emerald { color: #047857; }
+        .text-gray { color: #4b5563; }
+
+        .content { padding: 24px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        thead tr { border-bottom: 1px solid #d1d5db; }
+        th { padding: 4px 0; text-align: left; font-size: 9px; text-transform: uppercase; color: #9ca3af; font-weight: 500; }
+        th.right { text-align: right; }
+        th.center { text-align: center; }
+        tbody tr { border-bottom: 1px solid #f3f4f6; }
+        td { padding: 5px 0; }
+        td.right { text-align: right; }
+        td.center { text-align: center; }
+        td.bold { font-weight: bold; }
+        td.mono { font-family: 'Courier New', monospace; font-weight: bold; color: #374151; }
+        tfoot tr { border-top: 2px solid #d1d5db; background: #f9fafb; }
+        tfoot td { padding: 8px 0; font-weight: bold; }
+
+        .status-aberta { color: #2563eb; font-weight: bold; font-size: 9px; }
+        .status-liquidada { color: #16a34a; font-weight: bold; font-size: 9px; }
+        .status-cancelada { color: #9ca3af; font-weight: bold; font-size: 9px; }
+        .status-atrasada { color: #dc2626; font-weight: bold; font-size: 9px; }
+
+        .footer { padding: 12px 24px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 9px; color: #9ca3af; }
+        .btn-print { position: fixed; bottom: 32px; right: 32px; background: #1f2937; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); }
+        .btn-print:hover { background: #111827; }
     </style>
 </head>
-<body class="bg-gray-100 p-4 print:bg-white print:p-0 text-gray-800 font-sans">
-
-    <div class="max-w-6xl mx-auto bg-white shadow-lg print:shadow-none print:w-full min-h-screen relative pb-10">
-
-        <!-- CABECALHO -->
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-start">
-            <div class="flex items-center gap-3">
-                <div class="h-10 w-10 bg-gray-800 text-white flex items-center justify-center font-bold rounded text-lg">
-                    EC
-                </div>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-box">EC</div>
                 <div>
-                    <h1 class="text-lg font-bold uppercase tracking-wide text-gray-800 leading-tight">e-Cobrancas</h1>
-                    <p class="text-[10px] text-gray-500">Sistema de Gestao de Cobrancas</p>
+                    <div class="header-title">e-Cobrancas</div>
+                    <div class="header-sub">Sistema de Gestao de Cobrancas</div>
                 </div>
             </div>
-            <div class="text-right">
-                <h2 class="text-base font-semibold text-gray-700">Relatorio de Parcelas</h2>
-                <p class="text-[10px] text-gray-400 mt-0.5">Emitido em {% now "d/m/Y H:i" %}</p>
-            </div>
-        </div>
-
-        <!-- RESUMO -->
-        <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
-            <div class="grid grid-cols-4 gap-3">
-                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-center">
-                    <div class="text-[9px] text-blue-500 uppercase font-bold">Total Parcelas</div>
-                    <div class="text-2xl font-bold text-blue-700">{{ totais.quantidade }}</div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded p-3 text-center">
-                    <div class="text-[9px] text-green-500 uppercase font-bold">Em Aberto</div>
-                    <div class="text-lg font-bold text-green-700">R$ {{ totais.aberto|floatformat:2 }}</div>
-                </div>
-                <div class="bg-emerald-50 border border-emerald-200 rounded p-3 text-center">
-                    <div class="text-[9px] text-emerald-500 uppercase font-bold">Recebido</div>
-                    <div class="text-lg font-bold text-emerald-700">R$ {{ totais.pago|floatformat:2 }}</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded p-3 text-center">
-                    <div class="text-[9px] text-gray-400 uppercase font-bold">Cancelado</div>
-                    <div class="text-lg font-bold text-gray-600">R$ {{ totais.cancelado|floatformat:2 }}</div>
-                </div>
+            <div class="header-right">
+                <h2>Relatorio de Parcelas</h2>
+                <p>Emitido em {% now "d/m/Y H:i" %}</p>
             </div>
         </div>
 
-        <div class="p-6">
+        <div class="summary">
+            <div class="summary-grid">
+                <div class="summary-card card-blue">
+                    <div class="card-label text-blue">Total Parcelas</div>
+                    <div class="card-value text-blue">{{ totais.quantidade }}</div>
+                </div>
+                <div class="summary-card card-green">
+                    <div class="card-label text-green">Em Aberto</div>
+                    <div class="card-value text-green">R$ {{ totais.aberto|floatformat:2 }}</div>
+                </div>
+                <div class="summary-card card-emerald">
+                    <div class="card-label text-emerald">Recebido</div>
+                    <div class="card-value text-emerald">R$ {{ totais.pago|floatformat:2 }}</div>
+                </div>
+                <div class="summary-card card-gray">
+                    <div class="card-label text-gray">Cancelado</div>
+                    <div class="card-value text-gray">R$ {{ totais.cancelado|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
 
-            <!-- TABELA -->
-            <table class="w-full text-[10px]">
+        <div class="content">
+            <table>
                 <thead>
-                    <tr class="text-[9px] text-gray-400 uppercase border-b border-gray-300">
-                        <th class="py-1 text-left font-medium">Cliente</th>
-                        <th class="py-1 text-left font-medium w-36">Parcela</th>
-                        <th class="py-1 text-center font-medium w-20">Emissao</th>
-                        <th class="py-1 text-center font-medium w-20">Vencimento</th>
-                        <th class="py-1 text-right font-medium w-24">Valor</th>
-                        <th class="py-1 text-center font-medium w-20">Situacao</th>
-                        <th class="py-1 text-center font-medium w-20">Pagamento</th>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Parcela</th>
+                        <th class="center">Emissao</th>
+                        <th class="center">Vencimento</th>
+                        <th class="right">Valor</th>
+                        <th class="center">Situacao</th>
+                        <th class="center">Pagamento</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody>
                     {% for p in parcelas %}
                     {% with sit=p.situacao|lower %}
                     <tr>
-                        <td class="py-1 font-bold text-gray-800">{{ p.cliente.nome }}</td>
-                        <td class="py-1 font-mono font-bold text-gray-700">{{ p.parcela }}</td>
-                        <td class="py-1 text-center text-gray-600 font-mono">{{ p.emissao|date:"d/m/Y"|default:"-" }}</td>
-                        <td class="py-1 text-center text-gray-600 font-mono">{{ p.vencimento|date:"d/m/Y" }}</td>
-                        <td class="py-1 text-right font-bold text-gray-700">R$ {{ p.valorconta|floatformat:2 }}</td>
-                        <td class="py-1 text-center">
+                        <td class="bold">{{ p.cliente.nome }}</td>
+                        <td class="mono">{{ p.parcela }}</td>
+                        <td class="center">{{ p.emissao|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="center">{{ p.vencimento|date:"d/m/Y" }}</td>
+                        <td class="right bold">R$ {{ p.valorconta|floatformat:2 }}</td>
+                        <td class="center">
                             {% if sit == 'liquidada' %}
-                                <span class="text-green-600 font-bold text-[9px]">LIQUIDADA</span>
+                                <span class="status-liquidada">LIQUIDADA</span>
                             {% elif 'cancel' in sit %}
-                                <span class="text-gray-400 font-bold text-[9px]">CANCELADA</span>
+                                <span class="status-cancelada">CANCELADA</span>
                             {% elif p.esta_vencida %}
-                                <span class="text-red-600 font-bold text-[9px]">ATRASADA</span>
+                                <span class="status-atrasada">ATRASADA</span>
                             {% else %}
-                                <span class="text-blue-600 font-bold text-[9px]">ABERTA</span>
+                                <span class="status-aberta">ABERTA</span>
                             {% endif %}
                         </td>
-                        <td class="py-1 text-center text-gray-600 font-mono">{{ p.pagamento|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="center">{{ p.pagamento|date:"d/m/Y"|default:"-" }}</td>
                     </tr>
                     {% endwith %}
                     {% empty %}
-                    <tr><td colspan="7" class="py-4 text-center text-gray-400 italic">Nenhum registro encontrado.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;color:#9ca3af;font-style:italic;padding:16px;">Nenhum registro encontrado.</td></tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
-                    <tr class="border-t border-gray-300 bg-gray-50">
-                        <td colspan="4" class="py-2 text-right text-[10px] font-bold text-gray-600 uppercase pr-4">Total Geral:</td>
-                        <td class="py-2 text-right font-bold text-lg text-gray-800">R$ {{ totais.total_geral|floatformat:2 }}</td>
+                    <tr>
+                        <td colspan="4" style="text-align:right;font-size:10px;text-transform:uppercase;color:#6b7280;padding-right:16px;">Total Geral:</td>
+                        <td style="text-align:right;font-size:16px;font-weight:bold;color:#111827;">R$ {{ totais.total_geral|floatformat:2 }}</td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>
-
         </div>
 
-        <!-- Rodape -->
-        <div class="px-6 py-3 border-t border-gray-200 text-center text-[9px] text-gray-400">
+        <div class="footer">
             e-Cobrancas - Documento gerado automaticamente em {% now "d/m/Y H:i" %}
         </div>
-
-        <!-- Botoes Flutuantes -->
-        <div class="fixed bottom-8 right-8 no-print flex gap-3">
-            <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-full shadow-lg flex items-center border border-gray-600 text-xs">
-                <i class="fas fa-print mr-2"></i> Imprimir
-            </button>
-            <button onclick="window.close()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-full shadow-lg flex items-center border border-gray-400 text-xs">
-                <i class="fas fa-times mr-2"></i> Fechar
-            </button>
-        </div>
-
     </div>
+
+    <button class="btn-print no-print" onclick="window.print()">
+        <i class="fa fa-print"></i> Imprimir
+    </button>
 </body>
 </html>

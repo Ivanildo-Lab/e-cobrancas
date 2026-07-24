@@ -200,11 +200,15 @@ def desativar_cliente(request, pk):
 def _enviar_whatsapp(telefone, mensagem):
     import requests
     import logging
+    import json
+    from django.conf import settings
     logger = logging.getLogger('cadastros')
     try:
-        from decouple import config
-        url = config('EVOLUTION_API_URL')
-        api_key = config('EVOLUTION_API_KEY')
+        url = settings.EVOLUTION_API_URL
+        api_key = settings.EVOLUTION_API_KEY_VALUE
+        if not url or not api_key:
+            logger.error("[WHATSAPP] EVOLUTION_API_URL ou EVOLUTION_API_KEY nao configurados.")
+            return
         payload = {'number': telefone, 'text': mensagem}
         headers = {'apikey': api_key, 'Content-Type': 'application/json'}
         resp = requests.post(url, json=payload, headers=headers, timeout=30)

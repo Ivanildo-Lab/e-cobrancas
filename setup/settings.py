@@ -53,14 +53,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'setup.wsgi.application'
 
 # Conexao com PostgreSQL (Supabase ou local)
-# Para Supabase: cole a connection string no .env como DATABASE_URL
-# Formato: postgresql://postgres.[ref]:senha@aws-0-xxx.pooler.supabase.com:6543/postgres
+DATABASE_URL = config('DATABASE_URL', default='')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='postgres://postgres:1234@localhost:5432/ecobrancas_db'),
+        default=DATABASE_URL or 'postgresql://postgres:1234@localhost:5432/ecobrancas_db',
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=not DEBUG,
+        ssl_require=True,
     )
 }
 

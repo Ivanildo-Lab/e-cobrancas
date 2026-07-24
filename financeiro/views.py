@@ -523,8 +523,9 @@ def recibo_lote(request):
     if not recibo_data:
         messages.warning(request, 'Nenhum dado de recibo disponivel.')
         return redirect('financeiro:lista_parcelas')
+    empresa = Empresa.objects.first()
     return render(request, 'financeiro/recibo_lote.html', {
-        'recibo': recibo_data, 'titulo': 'Recibo de Pagamento'
+        'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento'
     })
 
 
@@ -541,10 +542,11 @@ def recibo_individual(request, pk):
             'id': parcela.id,
             'parcela': parcela.parcela,
             'cliente_nome': parcela.cliente.nome,
-            'valor': parcela.valorconta,
+            'valor': float(parcela.valorconta or 0),
         }],
         'total': float(parcela.valorconta or 0),
     }
+    empresa = Empresa.objects.first()
     return render(request, 'financeiro/recibo_lote.html', {
-        'recibo': recibo_data, 'titulo': 'Recibo de Pagamento'
+        'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento'
     })

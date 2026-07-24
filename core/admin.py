@@ -10,6 +10,7 @@ class EmpresaAdmin(admin.ModelAdmin):
             'pix_chave', 'pix_titular', 'pix_banco', 'pix_agencia',
             'pix_conta', 'pix_tipo_conta'
         ]}),
+        ('Assinatura', {'fields': ['assinatura', 'responsavel']}),
     ]
 
 @admin.register(ParametroSistema)

@@ -119,8 +119,21 @@
 
             <div class="assinatura">
                 <div class="assinatura-box">
-                    <div class="assinatura-linha"></div>
-                    <div class="assinatura-texto">Assinatura / Carimbo do Recebedor</div>
+                    {% if empresa and empresa.assinatura %}
+                        <img src="{{ empresa.assinatura.url }}" style="height: 60px; margin: 0 auto 8px auto; display: block; object-fit: contain;">
+                    {% else %}
+                        <div class="assinatura-linha"></div>
+                    {% endif %}
+                    {% if empresa and empresa.responsavel %}
+                        <div class="assinatura-texto">{{ empresa.responsavel }}</div>
+                    {% else %}
+                        <div class="assinatura-texto">Assinatura / Carimbo do Recebedor</div>
+                    {% endif %}
+                    {% if empresa %}
+                        <div style="font-size: 9px; color: #9ca3af; margin-top: 4px;">
+                            {{ empresa.nome }}{% if empresa.cnpj %} - CNPJ: {{ empresa.cnpj }}{% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 

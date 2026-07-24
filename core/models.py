@@ -12,6 +12,8 @@ class Empresa(models.Model):
     pix_conta = models.CharField(max_length=30, blank=True, null=True, verbose_name='Conta')
     pix_tipo_conta = models.CharField(max_length=20, blank=True, null=True, verbose_name='Tipo de Conta',
         choices=[('CC', 'Conta Corrente'), ('CP', 'Poupanca'), ('CI', 'Investimento')])
+    assinatura = models.ImageField(upload_to='assinaturas/', blank=True, null=True, verbose_name='Imagem da Assinatura')
+    responsavel = models.CharField(max_length=150, blank=True, null=True, verbose_name='Responsavel')
 
     class Meta:
         verbose_name = 'Empresa'

@@ -244,7 +244,7 @@
             <p class="text-sm"><span class="font-bold text-gray-400">Vencimento:</span> {{ parcela.vencimento|date:"d/m/Y" }}</p>
             <p class="text-sm"><span class="font-bold text-gray-400">Valor:</span> R$ {{ parcela.valorconta|floatformat:2 }}</p>
         </div>
-        <form method="post" action="{% url 'financeiro:registrar_pagamento' parcela.pk %}" class="space-y-4">
+        <form method="post" action="{% url 'financeiro:registrar_pagamento' parcela.pk %}" class="space-y-4" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='Processando...';">
             {% csrf_token %}
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data do Pagamento</label>

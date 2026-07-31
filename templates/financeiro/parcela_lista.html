@@ -78,9 +78,15 @@
 </div>
 
 <!-- Totais -->
-<div class="bg-slate-100 rounded-xl p-4 mb-6 flex flex-wrap justify-around text-sm">
-    <span class="font-bold text-slate-700">Total Parcelas: <span class="text-blue-600">{{ totais.quantidade }}</span></span>
-    <span class="font-bold text-slate-700">Valor Total: <span class="text-green-600">R$ {{ totais.valor_parcelas|floatformat:2 }}</span></span>
+<div class="bg-slate-100 rounded-xl p-4 mb-6 grid grid-cols-2 gap-4">
+    <div class="text-center">
+        <div class="text-[10px] font-bold text-gray-400 uppercase">Total Parcelas</div>
+        <div class="text-lg font-black text-blue-600">{{ totais.quantidade }}</div>
+    </div>
+    <div class="text-center">
+        <div class="text-[10px] font-bold text-gray-400 uppercase">Valor Total</div>
+        <div class="text-lg font-black text-green-600">R$ {{ totais.valor_parcelas|floatformat:2 }}</div>
+    </div>
 </div>
 
 <!-- Tabela -->

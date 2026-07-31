@@ -156,6 +156,10 @@ def criar_cliente(request):
 @login_required
 def editar_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
+
+    velho_valor = _fetch_one("SELECT valormensalidade FROM tbl_clientes WHERE id=%s", [pk])
+    valor_antigo = float(velho_valor['valormensalidade']) if velho_valor and velho_valor['valormensalidade'] else 0
+
     if request.method == 'POST':
         form = ClienteForm(request.POST, instance=cliente)
         if form.is_valid():
@@ -175,7 +179,23 @@ def editar_cliente(request, pk):
                         pk,
                     ]
                 )
-            messages.success(request, f'Cliente "{d["nome"]}" atualizado com sucesso!')
+
+            atualizar = request.POST.get('atualizar_parcelas')
+            novo_valor = float(d.get('valormensalidade') or 0)
+
+            if atualizar and novo_valor > 0 and novo_valor != valor_antigo:
+                with connection.cursor() as cur:
+                    cur.execute(
+                        """UPDATE tbl_contasareceber SET valorconta=%s
+                           WHERE cliente=%s AND situacao='Aberta'""",
+                        [novo_valor, pk]
+                    )
+                messages.success(request,
+                    f'Cliente "{d["nome"]}" atualizado. '
+                    f'Parcelas em aberto atualizadas de R$ {valor_antigo:.2f} para R$ {novo_valor:.2f}.')
+            else:
+                messages.success(request, f'Cliente "{d["nome"]}" atualizado com sucesso!')
+
             return redirect('cadastros:lista_clientes')
     else:
         form = ClienteForm(instance=cliente)

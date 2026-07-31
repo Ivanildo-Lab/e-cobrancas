@@ -77,7 +77,7 @@
     {% endif %}
 </div>
 
-{% load humanize %}
+{% load financeiro_tags %}
 <!-- Totais -->
 <div class="bg-slate-100 rounded-xl p-4 mb-6 grid grid-cols-2 gap-4">
     <div class="text-center">
@@ -86,7 +86,7 @@
     </div>
     <div class="text-center">
         <div class="text-[10px] font-bold text-gray-400 uppercase">Valor Total</div>
-        <div class="text-lg font-black text-green-600">R$ {{ totais.valor_parcelas|floatformat:2|intcomma }}</div>
+        <div class="text-lg font-black text-green-600">{{ totais.valor_parcelas|moeda_brl }}</div>
     </div>
 </div>
 

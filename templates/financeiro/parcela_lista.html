@@ -86,7 +86,7 @@
     </div>
     <div class="text-center">
         <div class="text-[10px] font-bold text-gray-400 uppercase">Valor Total</div>
-        <div class="text-lg font-black text-green-600">R$ {{ totais.valor_parcelas|intcomma }}</div>
+        <div class="text-lg font-black text-green-600">R$ {{ totais.valor_parcelas|floatformat:2|intcomma }}</div>
     </div>
 </div>
 

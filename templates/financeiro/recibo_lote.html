@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Recibo de Pagamento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1f2937; background: #f3f4f6; padding: 16px; }
@@ -51,8 +52,10 @@
         .assinatura-texto { font-size: 10px; color: #6b7280; font-weight: bold; }
 
         .footer { padding: 12px 24px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 9px; color: #9ca3af; }
-        .btn-print { position: fixed; bottom: 32px; right: 32px; background: #1f2937; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); }
+        .btn-print { position: fixed; bottom: 32px; right: 32px; background: #1f2937; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); z-index: 10; }
         .btn-print:hover { background: #111827; }
+        .btn-back { position: fixed; bottom: 32px; left: 32px; background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); text-decoration: none; z-index: 10; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-back:hover { background: #1d4ed8; }
     </style>
 </head>
 <body>
@@ -144,8 +147,11 @@
         </div>
     </div>
 
+    <a href="{% url 'financeiro:lista_parcelas' %}" class="btn-back no-print">
+        <i class="fa fa-arrow-left"></i> Voltar para Lista
+    </a>
     <button class="btn-print no-print" onclick="window.print()">
-        Imprimir Recibo
+        <i class="fa fa-print"></i> Imprimir Recibo
     </button>
 </body>
 </html>

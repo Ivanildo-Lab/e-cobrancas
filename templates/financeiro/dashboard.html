@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load financeiro_tags %}
 
 {% block title %}Dashboard | e-Cobrancas{% endblock %}
 {% block titulo_cabecalho %}Dashboard{% endblock %}
@@ -32,16 +33,16 @@
     </div>
 
     <!-- Card: Total Atrasado -->
-    <div class="bg-white rounded-2xl shadow-sm border-t-4 border-red-500 p-6">
+    <a href="{% url 'financeiro:lista_parcelas' %}?status=atrasada" class="block bg-white rounded-2xl shadow-sm border-t-4 border-red-500 p-6 hover:shadow-md transition group">
         <div class="flex items-center justify-between mb-4">
-            <div class="h-12 w-12 bg-red-100 rounded-xl flex items-center justify-center">
+            <div class="h-12 w-12 bg-red-100 rounded-xl flex items-center justify-center group-hover:bg-red-200 transition">
                 <i class="fa fa-exclamation-triangle text-red-600 text-xl"></i>
             </div>
-            <span class="text-[10px] font-black text-red-500 uppercase">ATRASADO</span>
+            <span class="text-[10px] font-black text-red-500 uppercase">ATRASADO <i class="fa fa-arrow-right ml-1"></i></span>
         </div>
         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Total em Atraso</p>
-        <p class="text-2xl font-black text-red-600">R$ {{ total_atrasado|floatformat:2 }}</p>
-    </div>
+        <p class="text-2xl font-black text-red-600">{{ total_atrasado|moeda_brl }}</p>
+    </a>
 </div>
 
 <!-- Resumo Rápido -->

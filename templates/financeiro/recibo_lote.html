@@ -147,7 +147,7 @@
         </div>
     </div>
 
-    <a href="{% url 'financeiro:lista_parcelas' %}" class="btn-back no-print">
+    <a href="{% url 'financeiro:lista_parcelas' %}{% if statusiltro %}?status={{ statusiltro }}{% endif %}" class="btn-back no-print">
         <i class="fa fa-arrow-left"></i> Voltar para Lista
     </a>
     <button class="btn-print no-print" onclick="window.print()">

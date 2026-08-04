@@ -287,6 +287,7 @@ def _verificar_ultima_parcela(request, cliente_id):
 @login_required
 def registrar_pagamento(request, pk):
     parcela = get_object_or_404(Parcela, pk=pk)
+    statusiltro = request.POST.get('status', '') or request.GET.get('status', '')
     if parcela.situacao.lower() != 'aberta':
         messages.warning(request, 'Esta parcela nao esta aberta para pagamento.')
         return redirect('financeiro:lista_parcelas')
@@ -309,6 +310,7 @@ def registrar_pagamento(request, pk):
                     'valor': float(parcela.valorconta or 0),
                 }],
                 'total': float(parcela.valorconta or 0),
+                'statusiltro': statusiltro,
             }
             _verificar_ultima_parcela(request, parcela.cliente_id)
             return redirect('financeiro:recibo_lote')
@@ -479,6 +481,7 @@ def baixa_lote(request):
 
     ids_selecionados = request.POST.getlist('parcelas_ids')
     data_pagamento = request.POST.get('data_pagamento')
+    statusiltro = request.POST.get('status', '')
 
     if not ids_selecionados:
         messages.warning(request, 'Nenhuma parcela selecionada.')
@@ -512,6 +515,7 @@ def baixa_lote(request):
             'data_pagamento': data_pagamento,
             'parcelas': parcelas_baixadas,
             'total': sum(float(p['valor']) for p in parcelas_baixadas),
+            'statusiltro': statusiltro,
         }
         return redirect('financeiro:recibo_lote')
     else:
@@ -527,8 +531,10 @@ def recibo_lote(request):
         messages.warning(request, 'Nenhum dado de recibo disponivel.')
         return redirect('financeiro:lista_parcelas')
     empresa = Empresa.objects.first()
+    statusiltro = recibo_data.get('statusiltro', '')
     return render(request, 'financeiro/recibo_lote.html', {
-        'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento'
+        'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento',
+        'statusiltro': statusiltro,
     })
 
 

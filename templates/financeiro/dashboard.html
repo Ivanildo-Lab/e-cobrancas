@@ -17,7 +17,7 @@
             <span class="text-[10px] font-black text-green-500 uppercase">{{ nome_mes_atual }}</span>
         </div>
         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">A Receber no Mes</p>
-        <p class="text-2xl font-black text-green-600">R$ {{ a_receber_mes|floatformat:2 }}</p>
+        <p class="text-2xl font-black text-green-600">{{ a_receber_mes|moeda_brl }}</p>
     </div>
 
     <!-- Card: Recebido no Mes -->
@@ -29,7 +29,7 @@
             <span class="text-[10px] font-black text-blue-500 uppercase">{{ nome_mes_atual }}</span>
         </div>
         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Recebido no Mes</p>
-        <p class="text-2xl font-black text-blue-600">R$ {{ recebido_mes|floatformat:2 }}</p>
+        <p class="text-2xl font-black text-blue-600">{{ recebido_mes|moeda_brl }}</p>
     </div>
 
     <!-- Card: Total Atrasado -->

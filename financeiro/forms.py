@@ -16,7 +16,20 @@ class GerarParcelasForm(forms.Form):
     valor_parcela = forms.DecimalField(
         max_digits=10, decimal_places=2,
         label='Valor de Cada Parcela (R$)',
-        widget=forms.NumberInput(attrs={'class': INPUT_CLASSES, 'step': '0.01', 'min': '0.01'}),
+        required=False,
+        widget=forms.NumberInput(attrs={'class': INPUT_CLASSES, 'step': '0.01', 'min': '0', 'id': 'id_valor_parcela'}),
+    )
+    valor_divida = forms.DecimalField(
+        max_digits=12, decimal_places=2,
+        label='Valor Total da Divida (R$)',
+        required=False,
+        widget=forms.NumberInput(attrs={'class': INPUT_CLASSES, 'step': '0.01', 'min': '0', 'id': 'id_valor_divida'}),
+    )
+    percentual_juros = forms.DecimalField(
+        max_digits=5, decimal_places=2,
+        label='Percentual de Juros (%)',
+        required=False,
+        widget=forms.NumberInput(attrs={'class': INPUT_CLASSES, 'step': '0.01', 'min': '0', 'id': 'id_percentual_juros'}),
     )
     quantidade_parcelas = forms.IntegerField(
         label='Quantidade de Parcelas',
@@ -32,6 +45,16 @@ class GerarParcelasForm(forms.Form):
         label='Periodicidade',
         widget=forms.Select(attrs={'class': SELECT_CLASSES}),
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        valor_parcela = cleaned_data.get('valor_parcela')
+        valor_divida = cleaned_data.get('valor_divida')
+        if not valor_parcela and not valor_divida:
+            raise forms.ValidationError('Informe o Valor da Parcela OU o Valor Total da Divida.')
+        if valor_parcela and valor_divida:
+            raise forms.ValidationError('Informe apenas UM dos campos: Valor da Parcela ou Valor Total da Divida.')
+        return cleaned_data
 
 
 class EditarParcelaForm(forms.ModelForm):

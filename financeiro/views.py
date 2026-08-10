@@ -163,10 +163,20 @@ def gerar_parcelas(request):
         form = GerarParcelasForm(request.POST)
         if form.is_valid():
             cliente = form.cleaned_data['cliente']
-            valor = form.cleaned_data['valor_parcela']
             quantidade = form.cleaned_data['quantidade_parcelas']
             primeira_data = form.cleaned_data['primeiro_vencimento']
             periodicidade = form.cleaned_data['periodicidade']
+            valor_parcela = form.cleaned_data.get('valor_parcela')
+            valor_divida = form.cleaned_data.get('valor_divida')
+            percentual_juros = form.cleaned_data.get('percentual_juros') or 0
+
+            if valor_divida:
+                total_com_juros = float(valor_divida) * (1 + float(percentual_juros) / 100)
+                valor = round(total_com_juros / quantidade, 2)
+                diff = round(float(valor_divida) * (1 + float(percentual_juros) / 100) - valor * quantidade, 2)
+            else:
+                valor = valor_parcela
+                diff = 0
 
             random_part = random.randint(100000, 999999)
             emissao = timezone.now().date()
@@ -179,15 +189,24 @@ def gerar_parcelas(request):
                         data_venc = primeira_data + relativedelta(months=i)
 
                     numero_formatado = f"REC-{random_part}-{num}/{quantidade}"
+                    valor_final = valor
+                    if i == 0 and diff > 0:
+                        valor_final = valor + diff
 
                     cur.execute(
                         """INSERT INTO tbl_contasareceber
                            (cliente, parcela, emissao, vencimento, valorconta, situacao, created_at)
                            VALUES (%s, %s, %s, %s, %s, 'Aberta', NOW())""",
-                        [cliente.id, numero_formatado, emissao, data_venc, valor]
+                        [cliente.id, numero_formatado, emissao, data_venc, valor_final]
                     )
 
-            messages.success(request, f'{quantidade} parcelas geradas com sucesso para {cliente.nome}!')
+            if valor_divida:
+                total_gerado = float(valor_divida) * (1 + float(percentual_juros) / 100)
+                messages.success(request,
+                    f'{quantidade} parcelas geradas para {cliente.nome}! '
+                    f'Divida: R$ {float(valor_divida):.2f} + Juros: {float(percentual_juros):.2f}% = R$ {total_gerado:.2f}')
+            else:
+                messages.success(request, f'{quantidade} parcelas geradas com sucesso para {cliente.nome}!')
             return redirect('financeiro:lista_parcelas')
     else:
         form = GerarParcelasForm()

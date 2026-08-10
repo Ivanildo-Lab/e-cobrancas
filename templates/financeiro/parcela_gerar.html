@@ -35,15 +35,9 @@
         <!-- Modo 1: Valor da Parcela -->
         <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100" id="modo-parcela">
             <h3 class="text-sm font-black text-blue-700 uppercase mb-4"><i class="fa fa-dollar-sign mr-2"></i> Valor da Parcela</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor de Cada Parcela (R$)</label>
-                    {{ form.valor_parcela }}
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Quantidade de Parcelas *</label>
-                    {{ form.quantidade_parcelas }}
-                </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor de Cada Parcela (R$)</label>
+                {{ form.valor_parcela }}
             </div>
         </div>
 
@@ -57,7 +51,7 @@
         <!-- Modo 2: Valor Total + Juros -->
         <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100" id="modo-divida">
             <h3 class="text-sm font-black text-amber-700 uppercase mb-4"><i class="fa fa-percent mr-2"></i> Valor Total da Divida + Juros</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Valor Total da Divida (R$)</label>
                     {{ form.valor_divida }}
@@ -66,20 +60,20 @@
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Juros (%)</label>
                     {{ form.percentual_juros }}
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Quantidade de Parcelas *</label>
-                    {{ form.quantidade_parcelas }}
-                </div>
             </div>
             <div class="mt-3 text-xs text-amber-600 font-bold">
                 <i class="fa fa-info-circle mr-1"></i> O sistema calcula automaticamente: (Divida + Juros) / Qtd Parcelas
             </div>
         </div>
 
-        <!-- Datas -->
+        <!-- Datas e Quantidade -->
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <h3 class="text-sm font-black text-slate-700 uppercase mb-4"><i class="fa fa-calendar mr-2"></i> Datas</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 class="text-sm font-black text-slate-700 uppercase mb-4"><i class="fa fa-calendar mr-2"></i> Datas e Quantidade</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Quantidade de Parcelas *</label>
+                    {{ form.quantidade_parcelas }}
+                </div>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">1o Vencimento *</label>
                     {{ form.primeiro_vencimento }}

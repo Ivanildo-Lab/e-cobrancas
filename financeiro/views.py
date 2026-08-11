@@ -226,7 +226,20 @@ def lista_parcelas(request):
 
     query, status_usado = _construir_query_parcelas(filtros)
 
-    if status_usado == 'liquidada':
+    ordenar = request.GET.get('ordenar', '')
+    asc_desc = request.GET.get('dir', 'asc')
+
+    sort_map = {
+        'cliente': 'cliente__nome' if asc_desc == 'asc' else '-cliente__nome',
+        'vencimento': 'vencimento' if asc_desc == 'asc' else '-vencimento',
+        'valor': 'valorconta' if asc_desc == 'asc' else '-valorconta',
+        'situacao': 'situacao' if asc_desc == 'asc' else '-situacao',
+        'pagamento': 'pagamento' if asc_desc == 'asc' else '-pagamento',
+    }
+
+    if ordenar in sort_map:
+        query = query.order_by(sort_map[ordenar])
+    elif status_usado == 'liquidada':
         query = query.order_by('-pagamento', '-vencimento')
     else:
         query = query.order_by('vencimento')
@@ -251,6 +264,8 @@ def lista_parcelas(request):
         'totais': totais,
         'current_filters': filtros,
         'clientes_autocomplete': clientes_ativos,
+        'ordenar': ordenar,
+        'dir': asc_desc,
     })
 
 

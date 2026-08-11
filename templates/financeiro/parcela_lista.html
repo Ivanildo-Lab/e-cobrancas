@@ -104,12 +104,27 @@
                         <input type="checkbox" id="check-all" onclick="toggleAll(this)"
                             class="w-4 h-4 accent-blue-600 cursor-pointer">
                     </th>
-                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Cliente</th>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:bg-slate-200 transition select-none"
+                        onclick="ordenarPor('cliente')">
+                        Cliente {% if ordenar == 'cliente' %}<i class="fa fa-caret-{% if dir == 'asc' %}up{% else %}down{% endif %} text-blue-600"></i>{% endif %}
+                    </th>
                     <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Parcela</th>
-                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Vencimento</th>
-                    <th class="text-right px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Valor</th>
-                    <th class="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Situacao</th>
-                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Pagto</th>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:bg-slate-200 transition select-none"
+                        onclick="ordenarPor('vencimento')">
+                        Vencimento {% if ordenar == 'vencimento' %}<i class="fa fa-caret-{% if dir == 'asc' %}up{% else %}down{% endif %} text-blue-600"></i>{% endif %}
+                    </th>
+                    <th class="text-right px-4 py-3 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:bg-slate-200 transition select-none"
+                        onclick="ordenarPor('valor')">
+                        Valor {% if ordenar == 'valor' %}<i class="fa fa-caret-{% if dir == 'asc' %}up{% else %}down{% endif %} text-blue-600"></i>{% endif %}
+                    </th>
+                    <th class="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:bg-slate-200 transition select-none"
+                        onclick="ordenarPor('situacao')">
+                        Situacao {% if ordenar == 'situacao' %}<i class="fa fa-caret-{% if dir == 'asc' %}up{% else %}down{% endif %} text-blue-600"></i>{% endif %}
+                    </th>
+                    <th class="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:bg-slate-200 transition select-none"
+                        onclick="ordenarPor('pagamento')">
+                        Pagto {% if ordenar == 'pagamento' %}<i class="fa fa-caret-{% if dir == 'asc' %}up{% else %}down{% endif %} text-blue-600"></i>{% endif %}
+                    </th>
                     <th class="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Acoes</th>
                 </tr>
             </thead>
@@ -410,6 +425,21 @@ function confirmarBaixaLote() {
     }
     document.getElementById('data-pagamento-lote').value = data;
     return confirm(`Confirma baixa de ${checks.length} parcela(s) com data ${data}?`);
+}
+
+var currentOrdenar = '{{ ordenar|default:"" }}';
+var currentDir = '{{ dir|default:"asc" }}';
+
+function ordenarPor(campo) {
+    var params = new URLSearchParams(window.location.search);
+    if (currentOrdenar === campo) {
+        params.set('dir', currentDir === 'asc' ? 'desc' : 'asc');
+    } else {
+        params.set('ordenar', campo);
+        params.set('dir', 'asc');
+    }
+    params.delete('page');
+    window.location.search = params.toString();
 }
 </script>
 {% endblock %}

@@ -396,21 +396,13 @@ def enviar_whatsapp_individual(request, pk):
         messages.warning(request, f'Cliente {cliente.nome} nao possui telefone cadastrado.')
         return redirect('financeiro:lista_parcelas')
 
-    parcelas_abertas = Parcela.objects.filter(
-        cliente=cliente, situacao='Aberta'
-    ).order_by('vencimento')
-
-    if not parcelas_abertas.exists():
-        messages.warning(request, f'Cliente {cliente.nome} nao possui parcelas em aberto.')
-        return redirect('financeiro:lista_parcelas')
-
     telefone = telefone_formatar(cliente.telefone)
     if len(telefone) < 12:
         messages.warning(request, f'Telefone do cliente {cliente.nome} esta em formato invalido.')
         return redirect('financeiro:lista_parcelas')
 
     empresa = Empresa.objects.first()
-    mensagem = montar_mensagem_cobranca(cliente, parcelas_abertas, empresa)
+    mensagem = montar_mensagem_cobranca(cliente, [parcela], empresa)
 
     thread = Thread(target=_enviar_whatsapp_background, args=(telefone, mensagem))
     thread.start()

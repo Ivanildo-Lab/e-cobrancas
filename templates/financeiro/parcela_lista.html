@@ -95,6 +95,7 @@
 <form id="form-baixa-lote" method="post" action="{% url 'financeiro:baixa_lote' %}">
 {% csrf_token %}
 <input type="hidden" name="status" value="{{ current_filters.status|default:'aberta' }}">
+<input type="hidden" name="data_pagamento" id="data-pagamento-lote" value="{% now 'Y-m-d' %}">
 <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm hidden md:table">
@@ -309,7 +310,6 @@
         <div class="bg-slate-50 rounded-xl p-4 mb-4">
             <p class="text-sm"><span class="font-bold text-gray-400">Parcelas selecionadas:</span> <span id="qtd-selecionadas" class="font-bold text-blue-600">0</span></p>
         </div>
-        <input type="hidden" name="data_pagamento" id="data-pagamento-lote" value="{% now 'Y-m-d' %}">
         <div class="mb-4">
             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data do Pagamento</label>
             <input type="date" id="data-pagamento-input" value="{% now 'Y-m-d' %}"

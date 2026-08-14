@@ -394,12 +394,18 @@
 
 {% block scripts %}
 <script>
+function getVisibleChecks() {
+    return Array.from(document.querySelectorAll('.parcela-check:checked')).filter(cb => cb.offsetParent !== null);
+}
+
 function toggleAll(source) {
-    document.querySelectorAll('.parcela-check').forEach(cb => cb.checked = source.checked);
+    document.querySelectorAll('.parcela-check').forEach(cb => {
+        cb.checked = source.checked && cb.offsetParent !== null;
+    });
 }
 
 function abrirModalBaixaLote() {
-    const checks = document.querySelectorAll('.parcela-check:checked');
+    const checks = getVisibleChecks();
     if (checks.length === 0) {
         alert('Selecione pelo menos uma parcela na tabela.');
         return;
@@ -413,7 +419,7 @@ function fecharModalBaixaLote() {
 }
 
 function confirmarBaixaLote() {
-    const checks = document.querySelectorAll('.parcela-check:checked');
+    const checks = getVisibleChecks();
     if (checks.length === 0) {
         alert('Nenhuma parcela selecionada.');
         return false;
@@ -441,5 +447,14 @@ function ordenarPor(campo) {
     params.delete('page');
     window.location.search = params.toString();
 }
+
+document.getElementById('form-baixa-lote').addEventListener('submit', function() {
+    var visibleIds = getVisibleChecks().map(cb => cb.value);
+    document.querySelectorAll('.parcela-check').forEach(cb => {
+        if (!visibleIds.includes(cb.value)) {
+            cb.removeAttribute('name');
+        }
+    });
+});
 </script>
 {% endblock %}

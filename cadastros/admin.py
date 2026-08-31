@@ -8,6 +8,6 @@ class CidadeAdmin(admin.ModelAdmin):
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'telefone', 'contato', 'cidade', 'ativo']
+    list_display = ['nome', 'razao_social', 'cpf', 'cnpj', 'telefone', 'contato', 'cidade', 'ativo']
     list_filter = ['ativo', 'cidade']
-    search_fields = ['nome', 'contato']
+    search_fields = ['nome', 'razao_social', 'cpf', 'cnpj', 'contato']

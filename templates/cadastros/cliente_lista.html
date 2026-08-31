@@ -11,7 +11,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar</label>
-                <input type="text" name="q" value="{{ busca }}" placeholder="Nome ou contato..."
+                <input type="text" name="q" value="{{ busca }}" placeholder="Nome, Razão, CPF, CNPJ ou contato..."
                     class="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div>
@@ -68,7 +68,8 @@
                 <th class="text-center px-4 py-3 w-10">
                     <input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" class="rounded border-gray-300 text-green-600 focus:ring-green-500">
                 </th>
-                <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Nome</th>
+                <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Nome / Razão Social</th>
+                <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">CPF / CNPJ</th>
                 <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Contato</th>
                 <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Telefone</th>
                 <th class="text-left px-6 py-3 text-[10px] font-black text-slate-400 uppercase">Cidade</th>
@@ -84,7 +85,11 @@
                         data-nome="{{ cliente.nome }}" data-telefone="{{ cliente.telefone|default:'' }}"
                         onclick="atualizarContador()" class="cliente-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500">
                 </td>
-                <td class="px-6 py-4 font-bold text-slate-700">{{ cliente.nome|truncatechars:40 }}</td>
+                <td class="px-6 py-4">
+                    <div class="font-bold text-slate-700">{{ cliente.nome|truncatechars:35 }}</div>
+                    {% if cliente.razao_social %}<div class="text-[11px] text-slate-400 truncate max-w-[180px]">{{ cliente.razao_social|truncatechars:40 }}</div>{% endif %}
+                </td>
+                <td class="px-6 py-4 text-slate-500 text-xs font-mono">{% if cliente.cnpj %}{{ cliente.cnpj }}{% elif cliente.cpf %}{{ cliente.cpf }}{% else %}-{% endif %}</td>
                 <td class="px-6 py-4 text-slate-500">{{ cliente.contato|default:"-" }}</td>
                 <td class="px-6 py-4 text-slate-500">{{ cliente.telefone|default:"-" }}</td>
                 <td class="px-6 py-4 text-slate-500">{{ cliente.cidade }}</td>
@@ -116,7 +121,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                <td colspan="8" class="px-6 py-12 text-center text-gray-400">
                     <i class="fa fa-users text-3xl mb-2 block"></i>
                     Nenhum cliente encontrado.
                 </td>
@@ -136,6 +141,14 @@
                         onclick="atualizarContador()" class="cliente-checkbox mt-1 w-4 h-4 accent-green-600 cursor-pointer flex-shrink-0">
                     <div class="min-w-0">
                         <p class="font-bold text-slate-700 text-sm truncate">{{ cliente.nome }}</p>
+                        {% if cliente.razao_social %}
+                        <p class="text-xs text-slate-400 truncate">{{ cliente.razao_social }}</p>
+                        {% endif %}
+                        {% if cliente.cnpj %}
+                        <p class="text-xs text-slate-500 font-mono truncate"><i class="fa fa-building mr-0.5"></i>{{ cliente.cnpj }}</p>
+                        {% elif cliente.cpf %}
+                        <p class="text-xs text-slate-500 font-mono truncate"><i class="fa fa-id-card mr-0.5"></i>{{ cliente.cpf }}</p>
+                        {% endif %}
                         {% if cliente.contato %}
                         <p class="text-xs text-slate-500 truncate">{{ cliente.contato }}</p>
                         {% endif %}

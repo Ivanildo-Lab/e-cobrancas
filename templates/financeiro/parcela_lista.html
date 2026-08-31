@@ -139,7 +139,11 @@
                             class="parcela-check w-4 h-4 accent-blue-600 cursor-pointer">
                         {% endif %}
                     </td>
-                    <td class="px-4 py-3 font-bold text-slate-700 max-w-[150px] truncate">{{ parcela.cliente.nome }}</td>
+                    <td class="px-4 py-3 max-w-[170px]">
+                        <div class="font-bold text-slate-700 truncate">{{ parcela.cliente.nome }}</div>
+                        {% if parcela.cliente.razao_social %}<div class="text-[11px] text-slate-400 truncate">{{ parcela.cliente.razao_social }}</div>{% endif %}
+                        {% if parcela.cliente.cnpj %}<div class="text-[10px] text-slate-400 font-mono">{{ parcela.cliente.cnpj }}</div>{% elif parcela.cliente.cpf %}<div class="text-[10px] text-slate-400 font-mono">{{ parcela.cliente.cpf }}</div>{% endif %}
+                    </td>
                     <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ parcela.parcela }}</td>
                     <td class="px-4 py-3 text-slate-600">{{ parcela.vencimento|date:"d/m/Y" }}</td>
                     <td class="px-4 py-3 text-right font-bold text-slate-700">R$ {{ parcela.valorconta|floatformat:2 }}</td>
@@ -216,6 +220,8 @@
                         {% endif %}
                         <div class="min-w-0">
                             <p class="font-bold text-slate-700 text-sm truncate">{{ parcela.cliente.nome }}</p>
+                            {% if parcela.cliente.razao_social %}<p class="text-[11px] text-slate-400 truncate">{{ parcela.cliente.razao_social }}</p>{% endif %}
+                            {% if parcela.cliente.cnpj %}<p class="text-[11px] text-slate-400 font-mono truncate">{{ parcela.cliente.cnpj }}</p>{% elif parcela.cliente.cpf %}<p class="text-[11px] text-slate-400 font-mono truncate">{{ parcela.cliente.cpf }}</p>{% endif %}
                             <div class="flex items-center gap-2 mt-0.5">
                                 <span class="font-mono text-xs text-slate-500">{{ parcela.parcela }}</span>
                                 <span class="text-xs text-slate-400">|</span>

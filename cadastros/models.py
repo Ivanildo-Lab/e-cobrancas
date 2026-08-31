@@ -19,6 +19,9 @@ class Cidade(models.Model):
 
 class Cliente(models.Model):
     nome = models.CharField(max_length=150, verbose_name='Nome Completo')
+    razao_social = models.CharField(max_length=200, blank=True, null=True, verbose_name='Razão Social')
+    cpf = models.CharField(max_length=14, blank=True, null=True, verbose_name='CPF', db_column='cpf')
+    cnpj = models.CharField(max_length=18, blank=True, null=True, verbose_name='CNPJ', db_column='cnpj')
     contato = models.CharField(max_length=150, blank=True, null=True, verbose_name='Pessoa de Contato')
     cidade = models.ForeignKey(Cidade, on_delete=models.PROTECT, related_name='clientes', verbose_name='Cidade', db_column='cidade')
     telefone = models.CharField(max_length=20, blank=True, null=True, verbose_name='Telefone/Celular')

@@ -97,7 +97,7 @@ class FiltroParcelasForm(forms.Form):
     cliente = forms.CharField(
         required=False,
         label='Cliente',
-        widget=forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Digite o nome do cliente...', 'list': 'clientes-list'}),
+        widget=forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Nome, Razão, CPF ou CNPJ...', 'list': 'clientes-list'}),
     )
     venc_inicio = forms.DateField(
         required=False,

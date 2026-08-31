@@ -114,7 +114,8 @@ def lista_clientes(request):
         queryset = queryset.filter(cidade_id=cidade_filter)
     if busca:
         queryset = queryset.filter(
-            Q(nome__icontains=busca) | Q(contato__icontains=busca)
+            Q(nome__icontains=busca) | Q(contato__icontains=busca) |
+            Q(razao_social__icontains=busca) | Q(cpf__icontains=busca) | Q(cnpj__icontains=busca)
         )
     paginator = Paginator(queryset, 15)
     clientes = paginator.get_page(page)
@@ -137,10 +138,11 @@ def criar_cliente(request):
             with connection.cursor() as cur:
                 cur.execute(
                     """INSERT INTO tbl_clientes
-                       (nome, contato, cidade, telefone, valormensalidade, diacobranca, obs, conexao, ativo, created_at)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())""",
+                       (nome, razao_social, cpf, cnpj, contato, cidade, telefone, valormensalidade, diacobranca, obs, conexao, ativo, created_at)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())""",
                     [
-                        d['nome'], d.get('contato', ''), cidade_id,
+                        d['nome'], d.get('razao_social', ''), d.get('cpf', ''), d.get('cnpj', ''),
+                        d.get('contato', ''), cidade_id,
                         d.get('telefone', ''), d.get('valormensalidade'),
                         d.get('diacobranca'), d.get('obs', ''),
                         d.get('conexao', ''), d.get('ativo', True),
@@ -168,11 +170,12 @@ def editar_cliente(request, pk):
             with connection.cursor() as cur:
                 cur.execute(
                     """UPDATE tbl_clientes
-                       SET nome=%s, contato=%s, cidade=%s, telefone=%s,
+                       SET nome=%s, razao_social=%s, cpf=%s, cnpj=%s, contato=%s, cidade=%s, telefone=%s,
                            valormensalidade=%s, diacobranca=%s, obs=%s, conexao=%s, ativo=%s
                        WHERE id=%s""",
                     [
-                        d['nome'], d.get('contato', ''), cidade_id,
+                        d['nome'], d.get('razao_social', ''), d.get('cpf', ''), d.get('cnpj', ''),
+                        d.get('contato', ''), cidade_id,
                         d.get('telefone', ''), d.get('valormensalidade'),
                         d.get('diacobranca'), d.get('obs', ''),
                         d.get('conexao', ''), d.get('ativo', True),

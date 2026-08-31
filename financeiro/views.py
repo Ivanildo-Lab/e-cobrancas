@@ -41,7 +41,12 @@ def _construir_query_parcelas(filtros):
 
     cliente_nome = filtros.get('cliente', '').strip()
     if cliente_nome:
-        query = query.filter(cliente__nome__icontains=cliente_nome)
+        query = query.filter(
+            Q(cliente__nome__icontains=cliente_nome) |
+            Q(cliente__razao_social__icontains=cliente_nome) |
+            Q(cliente__cpf__icontains=cliente_nome) |
+            Q(cliente__cnpj__icontains=cliente_nome)
+        )
 
     venc_inicio = filtros.get('venc_inicio')
     venc_fim = filtros.get('venc_fim')

@@ -29,11 +29,14 @@ class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
         fields = [
-            'nome', 'contato', 'conexao', 'cidade', 'telefone',
+            'nome', 'razao_social', 'cpf', 'cnpj', 'contato', 'conexao', 'cidade', 'telefone',
             'valormensalidade', 'diacobranca', 'obs', 'ativo',
         ]
         widgets = {
-            'nome': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Nome completo do cliente'}),
+            'nome': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Nome completo / Nome Fantasia'}),
+            'razao_social': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Razão Social (se PJ)'}),
+            'cpf': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': '000.000.000-00'}),
+            'cnpj': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': '00.000.000/0000-00'}),
             'contato': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Pessoa de contato'}),
             'conexao': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Indicacao, site, etc.'}),
             'cidade': forms.Select(attrs={'class': SELECT_CLASSES}),

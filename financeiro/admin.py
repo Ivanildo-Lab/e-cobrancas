@@ -5,5 +5,5 @@ from .models import Parcela
 class ParcelaAdmin(admin.ModelAdmin):
     list_display = ['parcela', 'cliente', 'valorconta', 'vencimento', 'situacao']
     list_filter = ['situacao', 'vencimento']
-    search_fields = ['parcela', 'cliente__nome']
+    search_fields = ['parcela', 'cliente__nome', 'cliente__razao_social', 'cliente__cpf', 'cliente__cnpj']
     date_hierarchy = 'vencimento'

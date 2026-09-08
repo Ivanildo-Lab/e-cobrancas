@@ -159,8 +159,9 @@ def criar_cliente(request):
 def editar_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
 
-    velho_valor = _fetch_one("SELECT valormensalidade FROM tbl_clientes WHERE id=%s", [pk])
-    valor_antigo = float(velho_valor['valormensalidade']) if velho_valor and velho_valor['valormensalidade'] else 0
+    velho = _fetch_one("SELECT valormensalidade, diacobranca FROM tbl_clientes WHERE id=%s", [pk])
+    valor_antigo = float(velho['valormensalidade']) if velho and velho['valormensalidade'] else 0
+    dia_antigo = int(velho['diacobranca']) if velho and velho['diacobranca'] else None
 
     if request.method == 'POST':
         form = ClienteForm(request.POST, instance=cliente)
@@ -183,19 +184,49 @@ def editar_cliente(request, pk):
                     ]
                 )
 
-            atualizar = request.POST.get('atualizar_parcelas')
+            atualizar_valor = request.POST.get('atualizar_parcelas')
+            atualizar_venc = request.POST.get('atualizar_vencimentos')
             novo_valor = float(d.get('valormensalidade') or 0)
+            novo_dia = int(d.get('diacobranca')) if d.get('diacobranca') else None
 
-            if atualizar and novo_valor > 0 and novo_valor != valor_antigo:
+            msgs = []
+            # Atualizar valor das parcelas abertas
+            if atualizar_valor and novo_valor > 0 and novo_valor != valor_antigo:
                 with connection.cursor() as cur:
                     cur.execute(
                         """UPDATE tbl_contasareceber SET valorconta=%s
                            WHERE cliente=%s AND situacao='Aberta'""",
                         [novo_valor, pk]
                     )
-                messages.success(request,
-                    f'Cliente "{d["nome"]}" atualizado. '
-                    f'Parcelas em aberto atualizadas de R$ {valor_antigo:.2f} para R$ {novo_valor:.2f}.')
+                    qtd_valor = cur.rowcount
+                msgs.append(f'Valor das parcelas atualizado de R$ {valor_antigo:.2f} para R$ {novo_valor:.2f} ({qtd_valor} parcela(s))')
+
+            # Atualizar vencimento (dia) das parcelas abertas
+            if atualizar_venc and novo_dia and novo_dia != dia_antigo and 1 <= novo_dia <= 31:
+                import calendar
+                with connection.cursor() as cur:
+                    cur.execute("SELECT id, vencimento FROM tbl_contasareceber WHERE cliente=%s AND situacao='Aberta'", [pk])
+                    parcelas_abertas = cur.fetchall()
+                    qtd_venc = 0
+                    for pid, venc in parcelas_abertas:
+                        if not venc:
+                            continue
+                        # venc pode ser date/datetime ou string
+                        ano = venc.year if hasattr(venc, 'year') else int(str(venc).split('-')[0])
+                        mes = venc.month if hasattr(venc, 'month') else int(str(venc).split('-')[1])
+                        ultimo_dia = calendar.monthrange(ano, mes)[1]
+                        dia_ajustado = min(novo_dia, ultimo_dia)
+                        try:
+                            from datetime import date
+                            nova_data = date(ano, mes, dia_ajustado)
+                        except ValueError:
+                            continue
+                        cur.execute("UPDATE tbl_contasareceber SET vencimento=%s WHERE id=%s", [nova_data, pid])
+                        qtd_venc += 1
+                msgs.append(f'Vencimentos atualizados para dia {novo_dia:02d} ({qtd_venc} parcela(s))')
+
+            if msgs:
+                messages.success(request, f'Cliente "{d["nome"]}" atualizado. ' + ' | '.join(msgs))
             else:
                 messages.success(request, f'Cliente "{d["nome"]}" atualizado com sucesso!')
 

@@ -106,7 +106,21 @@
                     <p class="text-xs text-amber-600 mt-1">Deseja atualizar todas as parcelas em aberto deste cliente para o novo valor?</p>
                     <label class="flex items-center gap-2 mt-2 cursor-pointer">
                         <input type="checkbox" name="atualizar_parcelas" value="1" class="rounded border-amber-400 text-amber-600 focus:ring-amber-500">
-                        <span class="text-xs font-bold text-amber-700">Sim, atualizar parcelas abertas</span>
+                        <span class="text-xs font-bold text-amber-700">Sim, atualizar valor das parcelas abertas</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="alerta-vencimentos" class="hidden bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <div class="flex items-start gap-3">
+                <i class="fa fa-calendar text-blue-500 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-blue-700">Dia de cobrança alterado!</p>
+                    <p class="text-xs text-blue-600 mt-1">Deseja atualizar o <strong>dia do vencimento</strong> de todas as parcelas em aberto deste cliente?</p>
+                    <label class="flex items-center gap-2 mt-2 cursor-pointer">
+                        <input type="checkbox" name="atualizar_vencimentos" value="1" class="rounded border-blue-400 text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-blue-700">Sim, ajustar vencimentos para o novo dia</span>
                     </label>
                 </div>
             </div>
@@ -123,21 +137,47 @@
 
 <script>
 (function() {
-    var inputOriginal = document.querySelector('[name="valormensalidade"]');
-    if (!inputOriginal) return;
-    var valorOriginal = inputOriginal.value;
-    var alerta = document.getElementById('alerta-parcelas');
+    var inputValor = document.querySelector('[name="valormensalidade"]');
+    var inputDia = document.querySelector('[name="diacobranca"]');
+    var alertaValor = document.getElementById('alerta-parcelas');
+    var alertaDia = document.getElementById('alerta-vencimentos');
+    var valorOriginal = inputValor ? inputValor.value : '';
+    var diaOriginal = inputDia ? inputDia.value : '';
 
-    inputOriginal.addEventListener('input', function() {
-        var novoValor = this.value;
-        if (novoValor && valorOriginal && parseFloat(novoValor) !== parseFloat(valorOriginal)) {
-            alerta.classList.remove('hidden');
-        } else {
-            alerta.classList.add('hidden');
-            var cb = alerta.querySelector('[name="atualizar_parcelas"]');
-            if (cb) cb.checked = false;
-        }
-    });
+    if (inputValor && alertaValor) {
+        inputValor.addEventListener('input', function() {
+            var novoValor = this.value;
+            if (novoValor && valorOriginal && parseFloat(novoValor) !== parseFloat(valorOriginal)) {
+                alertaValor.classList.remove('hidden');
+            } else {
+                alertaValor.classList.add('hidden');
+                var cb = alertaValor.querySelector('[name="atualizar_parcelas"]');
+                if (cb) cb.checked = false;
+            }
+        });
+    }
+    if (inputDia && alertaDia) {
+        inputDia.addEventListener('input', function() {
+            var novoDia = this.value;
+            if (novoDia && diaOriginal && parseInt(novoDia) !== parseInt(diaOriginal)) {
+                alertaDia.classList.remove('hidden');
+            } else {
+                alertaDia.classList.add('hidden');
+                var cb2 = alertaDia.querySelector('[name="atualizar_vencimentos"]');
+                if (cb2) cb2.checked = false;
+            }
+        });
+        inputDia.addEventListener('change', function() {
+            var novoDia = this.value;
+            if (novoDia && diaOriginal && parseInt(novoDia) !== parseInt(diaOriginal)) {
+                alertaDia.classList.remove('hidden');
+            } else {
+                alertaDia.classList.add('hidden');
+                var cb2 = alertaDia.querySelector('[name="atualizar_vencimentos"]');
+                if (cb2) cb2.checked = false;
+            }
+        });
+    }
 })();
 </script>
 {% endblock %}

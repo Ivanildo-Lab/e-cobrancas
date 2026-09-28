@@ -16,5 +16,6 @@ urlpatterns = [
     path('parcelas/pdf/', views.gerar_pdf, name='gerar_pdf'),
     path('parcelas/baixa-lote/', views.baixa_lote, name='baixa_lote'),
     path('parcelas/recibo-lote/', views.recibo_lote, name='recibo_lote'),
+    path('parcelas/recibo/enviar-whatsapp/', views.enviar_recibo_whatsapp, name='enviar_recibo_whatsapp'),
     path('parcelas/<int:pk>/recibo/', views.recibo_individual, name='recibo_individual'),
 ]

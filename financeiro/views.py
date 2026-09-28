@@ -21,7 +21,10 @@ from .forms import (
 )
 from cadastros.models import Cliente, Cidade
 from core.models import Empresa
-from .services import enviar_mensagem_whatsapp, telefone_formatar, montar_mensagem_cobranca
+from .services import (
+    enviar_mensagem_whatsapp, telefone_formatar,
+    montar_mensagem_cobranca, montar_mensagem_recibo,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -345,6 +348,7 @@ def registrar_pagamento(request, pk):
                 'parcelas': [{
                     'id': parcela.id,
                     'parcela': parcela.parcela,
+                    'cliente_id': parcela.cliente_id,
                     'cliente_nome': parcela.cliente.nome,
                     'valor': float(parcela.valorconta or 0),
                 }],
@@ -531,13 +535,14 @@ def baixa_lote(request):
             )
             if cur.rowcount > 0:
                 cur.execute(
-                    "SELECT p.parcela, c.nome, p.valorconta FROM tbl_contasareceber p JOIN tbl_clientes c ON p.cliente=c.id WHERE p.id=%s",
+                    "SELECT p.parcela, c.id, c.nome, p.valorconta FROM tbl_contasareceber p JOIN tbl_clientes c ON p.cliente=c.id WHERE p.id=%s",
                     [pid]
                 )
                 row = cur.fetchone()
                 if row:
                     parcelas_baixadas.append({
-                        'id': pid, 'parcela': row[0], 'cliente_nome': row[1], 'valor': float(row[2] or 0)
+                        'id': pid, 'parcela': row[0], 'cliente_id': row[1],
+                        'cliente_nome': row[2], 'valor': float(row[3] or 0)
                     })
 
     if parcelas_baixadas:
@@ -555,23 +560,108 @@ def baixa_lote(request):
     return redirect('financeiro:lista_parcelas')
 
 
+def _clientes_info_recibo(recibo_data):
+    """Agrupa parcelas do recibo por cliente e anexa telefone para o template/envio."""
+    grupos = {}
+    for p in recibo_data.get('parcelas', []):
+        cliente_id = p.get('cliente_id')
+        cliente_nome = p.get('cliente_nome', '')
+        telefone = ''
+        if cliente_id:
+            try:
+                cli = Cliente.objects.only('id', 'nome', 'telefone').get(pk=cliente_id)
+                cliente_nome = cli.nome
+                telefone = cli.telefone or ''
+            except Cliente.DoesNotExist:
+                pass
+        else:
+            # Compatibilidade: tenta localizar pelo id da parcela
+            try:
+                par = Parcela.objects.select_related('cliente').get(pk=p.get('id'))
+                cliente_id = par.cliente_id
+                cliente_nome = par.cliente.nome
+                telefone = par.cliente.telefone or ''
+                p['cliente_id'] = cliente_id
+                p['cliente_nome'] = cliente_nome
+            except Parcela.DoesNotExist:
+                pass
+        chave = cliente_id or cliente_nome
+        if chave not in grupos:
+            grupos[chave] = {
+                'cliente_id': cliente_id,
+                'cliente_nome': cliente_nome,
+                'telefone': telefone,
+                'telefone_formatado': telefone_formatar(telefone) if telefone else '',
+                'parcelas': [],
+                'total': 0.0,
+            }
+        grupos[chave]['parcelas'].append(p)
+        try:
+            grupos[chave]['total'] += float(p.get('valor') or 0)
+        except (TypeError, ValueError):
+            pass
+    for g in grupos.values():
+        g['tem_whatsapp'] = bool(g['telefone'] and len(g['telefone_formatado']) >= 12)
+    return list(grupos.values())
+
+
+def _recibo_from_ids(ids):
+    parcelas = list(
+        Parcela.objects.select_related('cliente').filter(id__in=ids).order_by('vencimento')
+    )
+    if not parcelas:
+        return None
+    data_pag = parcelas[0].pagamento
+    data_txt = data_pag.strftime('%d/%m/%Y') if data_pag else '-'
+    itens = [{
+        'id': p.id,
+        'parcela': p.parcela,
+        'cliente_id': p.cliente_id,
+        'cliente_nome': p.cliente.nome,
+        'valor': float(p.valorconta or 0),
+    } for p in parcelas]
+    return {
+        'data_pagamento': data_txt,
+        'parcelas': itens,
+        'total': sum(i['valor'] for i in itens),
+    }
+
+
 @login_required
 def recibo_lote(request):
-    recibo_data = request.session.pop('recibo_data', None)
-    if not recibo_data:
-        messages.warning(request, 'Nenhum dado de recibo disponivel.')
-        return redirect('financeiro:lista_parcelas')
+    ids_param = request.GET.get('ids', '').strip()
+    if ids_param:
+        try:
+            ids = [int(x) for x in ids_param.split(',') if x.strip().isdigit()]
+        except ValueError:
+            ids = []
+        recibo_data = _recibo_from_ids(ids) if ids else None
+        statusiltro = request.GET.get('status', '')
+        if recibo_data:
+            recibo_data['statusiltro'] = statusiltro
+        # Mantém sessão sincronizada para permitir reenvio mesmo após refresh
+        if recibo_data:
+            request.session['recibo_data'] = recibo_data
+    else:
+        recibo_data = request.session.get('recibo_data')
+        if not recibo_data:
+            messages.warning(request, 'Nenhum dado de recibo disponivel.')
+            return redirect('financeiro:lista_parcelas')
     empresa = Empresa.objects.first()
     statusiltro = recibo_data.get('statusiltro', '')
+    clientes_info = _clientes_info_recibo(recibo_data)
+    parcela_ids = ','.join(str(p.get('id')) for p in recibo_data.get('parcelas', []) if p.get('id'))
     return render(request, 'financeiro/recibo_lote.html', {
         'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento',
         'statusiltro': statusiltro,
+        'clientes_info': clientes_info,
+        'recibo_parcela_ids': parcela_ids,
     })
 
 
 @login_required
 def recibo_individual(request, pk):
-    parcela = get_object_or_404(Parcela, pk=pk)
+    parcela = get_object_or_404(Parcela.objects.select_related('cliente'), pk=pk)
     if parcela.situacao.lower() != 'liquidada':
         messages.warning(request, 'Apenas parcelas liquidadas podem gerar recibo.')
         return redirect('financeiro:lista_parcelas')
@@ -581,12 +671,102 @@ def recibo_individual(request, pk):
         'parcelas': [{
             'id': parcela.id,
             'parcela': parcela.parcela,
+            'cliente_id': parcela.cliente_id,
             'cliente_nome': parcela.cliente.nome,
             'valor': float(parcela.valorconta or 0),
         }],
         'total': float(parcela.valorconta or 0),
     }
     empresa = Empresa.objects.first()
+    clientes_info = _clientes_info_recibo(recibo_data)
     return render(request, 'financeiro/recibo_lote.html', {
-        'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento'
+        'recibo': recibo_data, 'empresa': empresa, 'titulo': 'Recibo de Pagamento',
+        'clientes_info': clientes_info,
+        'recibo_parcela_ids': str(parcela.id),
+        'recibo_individual_pk': parcela.id,
     })
+
+
+@login_required
+def enviar_recibo_whatsapp(request):
+    """Envia o comprovante de pagamento via WhatsApp reutilizando o serviço existente."""
+    if request.method != 'POST':
+        return redirect('financeiro:lista_parcelas')
+
+    raw_ids = request.POST.get('parcela_ids', '') or request.POST.get('ids', '')
+    # Suporta tanto "1,2,3" quanto múltiplos campos parcela_ids
+    ids = []
+    for chunk in request.POST.getlist('parcela_ids'):
+        ids.extend([x.strip() for x in chunk.split(',') if x.strip()])
+    if raw_ids and raw_ids not in request.POST.getlist('parcela_ids'):
+        ids.extend([x.strip() for x in raw_ids.split(',') if x.strip()])
+    ids = [i for i in ids if str(i).isdigit()]
+    # Fallback: usa o recibo guardado em sessão (fluxo baixa individual/lote)
+    recibo_sessao = request.session.get('recibo_data')
+    if not ids and recibo_sessao:
+        ids = [str(p.get('id')) for p in recibo_sessao.get('parcelas', []) if p.get('id')]
+
+    if not ids:
+        messages.warning(request, 'Nenhuma parcela identificada para envio do recibo.')
+        return redirect('financeiro:lista_parcelas')
+
+    parcelas = list(Parcela.objects.select_related('cliente').filter(id__in=ids))
+    if not parcelas:
+        messages.warning(request, 'Nenhuma parcela encontrada para envio do recibo.')
+        return redirect('financeiro:lista_parcelas')
+
+    empresa = Empresa.objects.first()
+    # Agrupa por cliente (baixa em lote pode conter mais de um cliente)
+    por_cliente = {}
+    for p in parcelas:
+        por_cliente.setdefault(p.cliente_id, {'cliente': p.cliente, 'parcelas': []})
+        por_cliente[p.cliente_id]['parcelas'].append(p)
+
+    enviados, erros = 0, []
+    data_pagamento = request.POST.get('data_pagamento', '').strip()
+    if not data_pagamento and recibo_sessao:
+        data_pagamento = recibo_sessao.get('data_pagamento', '')
+    if not data_pagamento:
+        pag = parcelas[0].pagamento
+        data_pagamento = pag.strftime('%d/%m/%Y') if pag else '-'
+
+    for dados in por_cliente.values():
+        cliente = dados['cliente']
+        itens = dados['parcelas']
+        if not cliente.telefone:
+            erros.append(f'{cliente.nome} sem telefone cadastrado.')
+            continue
+        telefone = telefone_formatar(cliente.telefone)
+        if len(telefone) < 12:
+            erros.append(f'Telefone de {cliente.nome} em formato invalido.')
+            continue
+        parcelas_info = [{'parcela': p.parcela, 'valor': float(p.valorconta or 0)} for p in itens]
+        total = sum(i['valor'] for i in parcelas_info)
+        mensagem = montar_mensagem_recibo(
+            cliente.nome, parcelas_info, total, data_pagamento, empresa
+        )
+        thread = Thread(target=_enviar_whatsapp_background, args=(telefone, mensagem))
+        thread.start()
+        enviados += 1
+
+    if enviados:
+        messages.success(
+            request,
+            f'Recibo programado para envio via WhatsApp para {enviados} cliente(s).'
+        )
+    if erros:
+        for e in erros:
+            messages.warning(request, e)
+    if not enviados and not erros:
+        messages.error(request, 'Nao foi possivel enviar o recibo via WhatsApp.')
+
+    # Volta para a janela do recibo mantendo os dados visíveis
+    next_url = request.POST.get('next', '').strip()
+    if next_url:
+        return redirect(next_url)
+    ids_str = ','.join(str(p.id) for p in parcelas)
+    statusiltro = request.POST.get('status', '')
+    base = resolve_url('financeiro:recibo_lote')
+    if statusiltro:
+        return redirect(f'{base}?ids={ids_str}&status={statusiltro}')
+    return redirect(f'{base}?ids={ids_str}')

@@ -66,9 +66,42 @@ def telefone_formatar(telefone):
     return numeros
 
 
+def montar_mensagem_recibo(cliente_nome, parcelas_info, total_pago, data_pagamento, empresa=None):
+    """Monta texto do recibo/comprovante de pagamento para envio via WhatsApp.
+
+    parcelas_info: lista de dicts ou objetos com chaves/atributos
+        'parcela' (numero) e 'valor' (float/Decimal).
+    """
+    partes = [f"Ola, *{cliente_nome}!*"]
+    partes.append("Segue o comprovante do seu pagamento:")
+    partes.append("")
+    partes.append("*RECIBO DE PAGAMENTO*")
+    partes.append(f"Data do pagamento: *{data_pagamento}*")
+    for p in parcelas_info:
+        numero = p.get('parcela') if isinstance(p, dict) else getattr(p, 'parcela', '')
+        valor = p.get('valor') if isinstance(p, dict) else getattr(p, 'valorconta', 0)
+        try:
+            valor_txt = f"{float(valor):.2f}"
+        except (TypeError, ValueError):
+            valor_txt = str(valor)
+        partes.append(f"  - Parcela *{numero}* | Valor: R$ {valor_txt}")
+    try:
+        total_txt = f"{float(total_pago):.2f}"
+    except (TypeError, ValueError):
+        total_txt = str(total_pago)
+    partes.append(f"\n*Valor total pago: R$ {total_txt}*")
+    if empresa is not None and getattr(empresa, 'nome', None):
+        partes.append(f"\nRecebedor: {empresa.nome}")
+        if getattr(empresa, 'responsavel', None):
+            partes.append(f"Responsavel: {empresa.responsavel}")
+    partes.append("\nObrigado pelo pagamento!")
+    partes.append("Em caso de duvida, responda esta mensagem.")
+    return "\n".join(partes)
+
+
 def montar_mensagem_cobranca(cliente, parcelas, empresa=None):
     total_devido = sum(p.valorconta or 0 for p in parcelas)
-    partes = [f"Ola, *{cliente.nome}*!"]
+    partes = [f"Ola, *{cliente.nome}!*"]
     partes.append("Verificamos que constam as seguintes parcelas em aberto em seu nome:")
     for p in parcelas:
         partes.append(f"  - Venc.: *{p.vencimento.strftime('%d/%m/%Y')}* | Valor: R$ {p.valorconta:.2f}")

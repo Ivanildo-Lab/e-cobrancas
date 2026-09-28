@@ -56,9 +56,26 @@
         .btn-print:hover { background: #111827; }
         .btn-back { position: fixed; bottom: 32px; left: 32px; background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); text-decoration: none; z-index: 10; display: inline-flex; align-items: center; gap: 6px; }
         .btn-back:hover { background: #1d4ed8; }
+        .btn-whats { position: fixed; bottom: 76px; right: 32px; background: #16a34a; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); z-index: 10; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-whats:hover { background: #15803d; }
+        .btn-whats:disabled { background: #9ca3af; cursor: not-allowed; }
+        .msg { max-width: 600px; margin: 0 auto 12px auto; padding: 10px 14px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .msg-success { background: #dcfce7; border: 1px solid #86efac; color: #15803d; }
+        .msg-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
+        .msg-error, .msg-info { background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .modal-box { background: #fff; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,.3); }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
+    {% if messages %}
+    <div class="no-print" style="max-width:600px;margin:0 auto 12px auto;">
+        {% for message in messages %}
+        <div class="msg {% if message.tags %}msg-{{ message.tags }}{% endif %}">{{ message|safe }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
     <div class="container">
 
         <div class="header">
@@ -150,8 +167,58 @@
     <a href="{% url 'financeiro:lista_parcelas' %}{% if statusiltro %}?status={{ statusiltro }}{% endif %}" class="btn-back no-print">
         <i class="fa fa-arrow-left"></i> Voltar para Lista
     </a>
+    {% if recibo_parcela_ids %}
+    <button type="button" class="btn-whats no-print" onclick="document.getElementById('modal-whats-recibo').classList.remove('hidden')">
+        <i class="fab fa-whatsapp"></i> Enviar via WhatsApp
+    </button>
+    {% endif %}
     <button class="btn-print no-print" onclick="window.print()">
         <i class="fa fa-print"></i> Imprimir Recibo
     </button>
+
+    {% if recibo_parcela_ids %}
+    <div id="modal-whats-recibo" class="hidden no-print modal-overlay">
+        <div class="modal-box">
+            <h3 style="font-size:15px;font-weight:bold;color:#111827;margin-bottom:12px;">
+                <i class="fab fa-whatsapp" style="color:#16a34a;margin-right:6px;"></i> Enviar recibo via WhatsApp
+            </h3>
+            <p style="font-size:11px;color:#4b5563;margin-bottom:12px;">
+                Será enviada a mensagem de comprovante de pagamento usando o mesmo serviço de WhatsApp do sistema (Evolution API), em segundo plano.
+            </p>
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:#374151;">
+                {% for c in clientes_info %}
+                <div style="margin-bottom:{% if not forloop.last %}8px{% else %}0{% endif %};">
+                    <div style="font-weight:bold;">{{ c.cliente_nome }}</div>
+                    {% if c.telefone %}
+                    <div>Telefone: {{ c.telefone }}</div>
+                    {% else %}
+                    <div style="color:#b45309;">Sem telefone cadastrado — não será enviado.</div>
+                    {% endif %}
+                    <div>Total: R$ {{ c.total|floatformat:2 }}</div>
+                </div>
+                {% empty %}
+                <div>Nenhum cliente identificado.</div>
+                {% endfor %}
+            </div>
+            <form method="post" action="{% url 'financeiro:enviar_recibo_whatsapp' %}">
+                {% csrf_token %}
+                <input type="hidden" name="parcela_ids" value="{{ recibo_parcela_ids }}">
+                <input type="hidden" name="data_pagamento" value="{{ recibo.data_pagamento }}">
+                <input type="hidden" name="status" value="{{ statusiltro }}">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+                    <button type="button" onclick="document.getElementById('modal-whats-recibo').classList.add('hidden')"
+                        style="padding:8px 18px;background:#f3f4f6;color:#4b5563;border:none;border-radius:10px;font-weight:bold;font-size:11px;cursor:pointer;">
+                        Voltar
+                    </button>
+                    <button type="submit"
+                        style="padding:8px 20px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:11px;cursor:pointer;">
+                        <i class="fab fa-whatsapp"></i> Confirmar Envio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 </body>
 </html>

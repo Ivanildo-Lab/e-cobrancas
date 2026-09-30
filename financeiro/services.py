@@ -80,11 +80,19 @@ def montar_mensagem_recibo(cliente_nome, parcelas_info, total_pago, data_pagamen
     for p in parcelas_info:
         numero = p.get('parcela') if isinstance(p, dict) else getattr(p, 'parcela', '')
         valor = p.get('valor') if isinstance(p, dict) else getattr(p, 'valorconta', 0)
+        venc = p.get('vencimento') if isinstance(p, dict) else getattr(p, 'vencimento', '')
+        if hasattr(venc, 'strftime'):
+            try:
+                venc_txt = venc.strftime('%d/%m/%Y')
+            except Exception:
+                venc_txt = str(venc)
+        else:
+            venc_txt = str(venc) if venc else '-'
         try:
             valor_txt = f"{float(valor):.2f}"
         except (TypeError, ValueError):
             valor_txt = str(valor)
-        partes.append(f"  - Parcela *{numero}* | Valor: R$ {valor_txt}")
+        partes.append(f"  - Parcela *{numero}* | Venc: {venc_txt} | Valor: R$ {valor_txt}")
     try:
         total_txt = f"{float(total_pago):.2f}"
     except (TypeError, ValueError):

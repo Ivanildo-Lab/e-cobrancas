@@ -351,6 +351,7 @@ def registrar_pagamento(request, pk):
                     'cliente_id': parcela.cliente_id,
                     'cliente_nome': parcela.cliente.nome,
                     'valor': float(parcela.valorconta or 0),
+                    'vencimento': parcela.vencimento.strftime('%d/%m/%Y') if parcela.vencimento else '-',
                 }],
                 'total': float(parcela.valorconta or 0),
                 'statusiltro': statusiltro,
@@ -535,14 +536,16 @@ def baixa_lote(request):
             )
             if cur.rowcount > 0:
                 cur.execute(
-                    "SELECT p.parcela, c.id, c.nome, p.valorconta FROM tbl_contasareceber p JOIN tbl_clientes c ON p.cliente=c.id WHERE p.id=%s",
+                    "SELECT p.parcela, c.id, c.nome, p.valorconta, p.vencimento FROM tbl_contasareceber p JOIN tbl_clientes c ON p.cliente=c.id WHERE p.id=%s",
                     [pid]
                 )
                 row = cur.fetchone()
                 if row:
+                    venc = row[4]
                     parcelas_baixadas.append({
                         'id': pid, 'parcela': row[0], 'cliente_id': row[1],
-                        'cliente_nome': row[2], 'valor': float(row[3] or 0)
+                        'cliente_nome': row[2], 'valor': float(row[3] or 0),
+                        'vencimento': venc.strftime('%d/%m/%Y') if hasattr(venc, 'strftime') else (str(venc) if venc else '-'),
                     })
 
     if parcelas_baixadas:
@@ -583,6 +586,8 @@ def _clientes_info_recibo(recibo_data):
                 telefone = par.cliente.telefone or ''
                 p['cliente_id'] = cliente_id
                 p['cliente_nome'] = cliente_nome
+                if not p.get('vencimento'):
+                    p['vencimento'] = par.vencimento.strftime('%d/%m/%Y') if par.vencimento else '-'
             except Parcela.DoesNotExist:
                 pass
         chave = cliente_id or cliente_nome
@@ -619,6 +624,7 @@ def _recibo_from_ids(ids):
         'cliente_id': p.cliente_id,
         'cliente_nome': p.cliente.nome,
         'valor': float(p.valorconta or 0),
+        'vencimento': p.vencimento.strftime('%d/%m/%Y') if p.vencimento else '-',
     } for p in parcelas]
     return {
         'data_pagamento': data_txt,
@@ -674,6 +680,7 @@ def recibo_individual(request, pk):
             'cliente_id': parcela.cliente_id,
             'cliente_nome': parcela.cliente.nome,
             'valor': float(parcela.valorconta or 0),
+            'vencimento': parcela.vencimento.strftime('%d/%m/%Y') if parcela.vencimento else '-',
         }],
         'total': float(parcela.valorconta or 0),
     }
@@ -740,7 +747,7 @@ def enviar_recibo_whatsapp(request):
         if len(telefone) < 12:
             erros.append(f'Telefone de {cliente.nome} em formato invalido.')
             continue
-        parcelas_info = [{'parcela': p.parcela, 'valor': float(p.valorconta or 0)} for p in itens]
+        parcelas_info = [{'parcela': p.parcela, 'valor': float(p.valorconta or 0), 'vencimento': p.vencimento.strftime('%d/%m/%Y') if p.vencimento else '-'} for p in itens]
         total = sum(i['valor'] for i in parcelas_info)
         mensagem = montar_mensagem_recibo(
             cliente.nome, parcelas_info, total, data_pagamento, empresa

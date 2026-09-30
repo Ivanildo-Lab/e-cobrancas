@@ -114,6 +114,7 @@
                     <tr>
                         <th>Cliente</th>
                         <th>Parcela</th>
+                        <th>Vencimento</th>
                         <th class="right">Valor (R$)</th>
                     </tr>
                 </thead>
@@ -122,6 +123,7 @@
                     <tr>
                         <td class="bold">{{ p.cliente_nome }}</td>
                         <td class="mono">{{ p.parcela }}</td>
+                        <td>{{ p.vencimento|default:"-" }}</td>
                         <td class="right bold">R$ {{ p.valor|floatformat:2 }}</td>
                     </tr>
                     {% endfor %}

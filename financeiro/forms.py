@@ -10,8 +10,8 @@ class GerarParcelasForm(forms.Form):
     cliente = forms.ModelChoiceField(
         queryset=Cliente.objects.filter(ativo=True).order_by('nome'),
         label='Selecione o Cliente',
-        widget=forms.Select(attrs={'class': SELECT_CLASSES}),
-        empty_label='-- Selecione um cliente --',
+        widget=forms.HiddenInput(attrs={'id': 'id_cliente'}),
+        empty_label=None,
     )
     valor_parcela = forms.DecimalField(
         max_digits=10, decimal_places=2,

@@ -26,9 +26,17 @@
 
         <div class="bg-green-50/50 p-4 rounded-xl border border-green-100">
             <h3 class="text-sm font-black text-green-700 uppercase mb-4"><i class="fa fa-user mr-2"></i> Cliente</h3>
-            <div>
-                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Selecione o Cliente *</label>
+            <div class="relative">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Buscar Cliente *</label>
                 {{ form.cliente }}
+                <input type="text" id="cliente_busca" placeholder="Digite nome, razão social, CPF/CNPJ, contato ou cidade... (mín. 2 letras)"
+                    autocomplete="off" class="w-full border border-gray-300 rounded p-2 text-sm shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                <div id="cliente_resultados" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto"></div>
+                <div id="cliente_selecionado" class="hidden mt-2 flex items-center justify-between bg-white border border-green-200 rounded-xl px-3 py-2"></div>
+                {% if form.cliente.errors %}
+                <p class="text-xs text-red-600 font-bold mt-1">{{ form.cliente.errors.0 }}</p>
+                {% endif %}
+                <p class="text-[11px] text-gray-400 mt-1">Busca por nome, razão social, CPF/CNPJ, contato ou cidade. Apenas ativos.</p>
             </div>
         </div>
 
@@ -121,6 +129,162 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Autocomplete inteligente de cliente ---
+        const buscaUrl = "{% url 'financeiro:buscar_clientes_api' %}";
+        const inputBusca = document.getElementById('cliente_busca');
+        const inputHidden = document.getElementById('id_cliente');
+        const boxRes = document.getElementById('cliente_resultados');
+        const boxSel = document.getElementById('cliente_selecionado');
+        let itens = [];
+        let activeIdx = -1;
+        let timer = null;
+
+        function mostrarSelecionado(c) {
+            if (!c) { boxSel.classList.add('hidden'); boxSel.innerHTML = ''; return; }
+            boxSel.classList.remove('hidden');
+            boxSel.innerHTML = '';
+            const info = document.createElement('div');
+            info.className = 'text-sm';
+            info.innerHTML = '<span class="font-black text-slate-800"></span>' +
+                (c.doc ? ' <span class="text-xs text-gray-400"></span>' : '') +
+                (c.cidade ? '<div class="text-xs text-gray-500"></div>' : '');
+            info.querySelector('.font-black').textContent = c.nome;
+            if (c.doc) info.querySelector('.text-gray-400').textContent = '• ' + c.doc;
+            if (c.cidade) info.querySelector('.text-gray-500').textContent = c.cidade + (c.telefone ? ' • ' + c.telefone : '');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'text-xs font-bold text-red-500 hover:text-red-700 ml-3';
+            btn.textContent = '✕ Trocar';
+            btn.onclick = function() {
+                if (inputHidden) inputHidden.value = '';
+                if (inputBusca) { inputBusca.value = ''; inputBusca.focus(); }
+                mostrarSelecionado(null);
+            };
+            boxSel.appendChild(info);
+            boxSel.appendChild(btn);
+        }
+
+        function fecharResultados() {
+            boxRes.classList.add('hidden');
+            boxRes.innerHTML = '';
+            itens = [];
+            activeIdx = -1;
+        }
+
+        function destacar(texto, termo) {
+            if (!termo || termo.length < 2) return document.createTextNode(texto);
+            const frag = document.createDocumentFragment();
+            const i = texto.toLowerCase().indexOf(termo.toLowerCase());
+            if (i < 0) { frag.appendChild(document.createTextNode(texto)); return frag; }
+            frag.appendChild(document.createTextNode(texto.slice(0, i)));
+            const b = document.createElement('b');
+            b.className = 'text-green-700';
+            b.textContent = texto.slice(i, i + termo.length);
+            frag.appendChild(b);
+            frag.appendChild(document.createTextNode(texto.slice(i + termo.length)));
+            return frag;
+        }
+
+        function renderResultados(lista, termo) {
+            boxRes.innerHTML = '';
+            if (!lista.length) {
+                boxRes.innerHTML = '<div class="px-3 py-2 text-xs text-gray-500">Nenhum cliente encontrado. Tente nome, CPF/CNPJ ou cidade.</div>';
+            } else {
+                lista.forEach(function(c, idx) {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'w-full text-left px-3 py-2 hover:bg-green-50 border-b border-gray-100 last:border-0';
+                    const nome = document.createElement('div');
+                    nome.className = 'text-sm font-bold text-slate-800';
+                    nome.appendChild(destacar(c.nome, termo));
+                    b.appendChild(nome);
+                    const sub = document.createElement('div');
+                    sub.className = 'text-[11px] text-gray-500';
+                    sub.textContent = [c.razao, c.doc, c.cidade].filter(Boolean).join(' • ');
+                    b.appendChild(sub);
+                    b.addEventListener('click', function() { selecionar(idx); });
+                    b.addEventListener('mousemove', function() { marcarAtivo(idx); });
+                    boxRes.appendChild(b);
+                });
+            }
+            boxRes.classList.remove('hidden');
+        }
+
+        function marcarAtivo(idx) {
+            activeIdx = idx;
+            Array.from(boxRes.children).forEach(function(el, i) {
+                el.classList.toggle('bg-green-50', i === idx);
+            });
+        }
+
+        function selecionar(idx) {
+            const c = itens[idx];
+            if (!c) return;
+            if (inputHidden) inputHidden.value = c.id;
+            if (inputBusca) inputBusca.value = c.nome;
+            mostrarSelecionado(c);
+            fecharResultados();
+        }
+
+        async function buscar(termo) {
+            try {
+                const r = await fetch(buscaUrl + '?q=' + encodeURIComponent(termo), {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+                const j = await r.json();
+                itens = j.resultados || [];
+                renderResultados(itens, termo);
+            } catch (e) { /* silencioso */ }
+        }
+
+        if (inputBusca) {
+            inputBusca.addEventListener('input', function() {
+                if (inputHidden && inputBusca.value.trim() === '') inputHidden.value = '';
+                // se o usuário editar após selecionar, limpa seleção divergente
+                if (inputHidden && inputHidden.value && boxSel && !boxSel.classList.contains('hidden')) {
+                    const sel = boxSel.textContent || '';
+                    if (!sel.includes(inputBusca.value.trim()) && inputBusca.value.trim() !== '') {
+                        inputHidden.value = '';
+                        mostrarSelecionado(null);
+                    }
+                }
+                const v = inputBusca.value.trim();
+                clearTimeout(timer);
+                if (v.length < 2) { fecharResultados(); return; }
+                timer = setTimeout(function() { buscar(v); }, 250);
+            });
+            inputBusca.addEventListener('keydown', function(e) {
+                if (boxRes.classList.contains('hidden') || !itens.length) return;
+                if (e.key === 'ArrowDown') { e.preventDefault(); marcarAtivo((activeIdx + 1) % itens.length); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); marcarAtivo((activeIdx - 1 + itens.length) % itens.length); }
+                else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); selecionar(activeIdx); }
+                else if (e.key === 'Escape') { fecharResultados(); }
+            });
+            document.addEventListener('click', function(e) {
+                if (!boxRes.contains(e.target) && e.target !== inputBusca) fecharResultados();
+            });
+            // Reexibe seleção após erro de validação (POST com form inválido)
+            if (inputHidden && inputHidden.value) {
+                fetch(buscaUrl + '?id=' + encodeURIComponent(inputHidden.value))
+                    .then(function(r) { return r.json(); })
+                    .then(function(c) {
+                        if (c && c.id) {
+                            if (!inputBusca.value) inputBusca.value = c.nome;
+                            mostrarSelecionado(c);
+                        }
+                    }).catch(function() {});
+            }
+            // Impede submit sem cliente
+            const form = inputBusca.closest('form');
+            if (form) form.addEventListener('submit', function(e) {
+                if (inputHidden && !inputHidden.value) {
+                    e.preventDefault();
+                    inputBusca.focus();
+                    inputBusca.classList.add('border-red-500');
+                    alert('Busque e selecione um cliente antes de gerar.');
+                }
+            });
+        }
+
+        // --- Preview de valores (existente) ---
         const inputValor = document.getElementById('id_valor_parcela');
         const inputDivida = document.getElementById('id_valor_divida');
         const inputJuros = document.getElementById('id_percentual_juros');

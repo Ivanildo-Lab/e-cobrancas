@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
 from django.db import connection
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
@@ -163,6 +163,44 @@ def dashboard(request):
         'total_clientes': total_clientes,
         'total_parcelas_abertas': total_parcelas_abertas,
     })
+
+
+@login_required
+def buscar_clientes_api(request):
+    """Busca inteligente de clientes para autocomplete: nome, razão, CPF/CNPJ, contato, cidade."""
+    q = (request.GET.get('q') or '').strip()
+    pid = (request.GET.get('id') or '').strip()
+    base = Cliente.objects.select_related('cidade').filter(ativo=True)
+    if pid.isdigit():
+        try:
+            c = base.get(pk=int(pid))
+            return JsonResponse({'id': c.id, 'nome': c.nome,
+                                 'razao': c.razao_social or '',
+                                 'doc': c.cnpj or c.cpf or '',
+                                 'cidade': str(c.cidade) if c.cidade_id else '',
+                                 'telefone': c.telefone or ''})
+        except Cliente.DoesNotExist:
+            return JsonResponse({'error': 'nao encontrado'}, status=404)
+    if len(q) < 2:
+        return JsonResponse({'resultados': []})
+    digitos = ''.join(filter(str.isdigit, q))
+    filtro = (Q(nome__icontains=q) | Q(razao_social__icontains=q) |
+              Q(contato__icontains=q) | Q(cidade__nome__icontains=q))
+    if q:
+        filtro |= Q(cpf__icontains=q) | Q(cnpj__icontains=q)
+    if len(digitos) >= 3:
+        filtro |= Q(cpf__icontains=digitos) | Q(cnpj__icontains=digitos)
+    clientes = list(base.filter(filtro).order_by('nome')[:15])
+    # Rank simples: quem começa com a busca primeiro
+    ql = q.lower()
+    clientes.sort(key=lambda c: (0 if (c.nome or '').lower().startswith(ql) else 1,
+                                 (c.nome or '').lower()))
+    resultados = [{'id': c.id, 'nome': c.nome,
+                   'razao': c.razao_social or '',
+                   'doc': c.cnpj or c.cpf or '',
+                   'cidade': str(c.cidade) if c.cidade_id else '',
+                   'telefone': c.telefone or ''} for c in clientes]
+    return JsonResponse({'resultados': resultados})
 
 
 @login_required

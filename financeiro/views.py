@@ -753,12 +753,12 @@ def enviar_recibo_whatsapp(request):
 
     if not ids:
         messages.warning(request, 'Nenhuma parcela identificada para envio do recibo.')
-        return redirect('financeiro:lista_parcelas')
+        return redirect(f"{resolve_url('financeiro:lista_parcelas')}?status=atrasada")
 
     parcelas = list(Parcela.objects.select_related('cliente').filter(id__in=ids))
     if not parcelas:
         messages.warning(request, 'Nenhuma parcela encontrada para envio do recibo.')
-        return redirect('financeiro:lista_parcelas')
+        return redirect(f"{resolve_url('financeiro:lista_parcelas')}?status=atrasada")
 
     empresa = Empresa.objects.first()
     # Agrupa por cliente (baixa em lote pode conter mais de um cliente)
@@ -805,13 +805,6 @@ def enviar_recibo_whatsapp(request):
     if not enviados and not erros:
         messages.error(request, 'Nao foi possivel enviar o recibo via WhatsApp.')
 
-    # Volta para a janela do recibo mantendo os dados visíveis
-    next_url = request.POST.get('next', '').strip()
-    if next_url:
-        return redirect(next_url)
-    ids_str = ','.join(str(p.id) for p in parcelas)
-    statusiltro = request.POST.get('status', '')
-    base = resolve_url('financeiro:recibo_lote')
-    if statusiltro:
-        return redirect(f'{base}?ids={ids_str}&status={statusiltro}')
-    return redirect(f'{base}?ids={ids_str}')
+    # Após o envio do comprovante, volta para a lista de parcelas atrasadas
+    base_lista = resolve_url('financeiro:lista_parcelas')
+    return redirect(f'{base_lista}?status=atrasada')

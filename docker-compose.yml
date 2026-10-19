@@ -1,0 +1,31 @@
+# ---- docker-compose.yml para Coolify ----
+# O Coolify gerencia o reverse proxy (Traefik) e o SSL automaticamente.
+# Você só precisa apontar o domínio no painel do Coolify.
+#
+# IMPORTANTE para os outros 14 apps (MySQL): adicione um bloco `environment`
+# apontando DATABASE_URL para o MySQL do VPS. Exemplo:
+#   environment:
+#     DATABASE_URL: "mysql://user:senha@mysql-host:3306/nome_do_banco"
+# Este app (e-cobrança) usa Supabase, então o DATABASE_URL vem do Coolify.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # As variáveis abaixo são definidas no painel do Coolify (aba Environment).
+    # python-decouple lê direto das variáveis de ambiente.
+    environment:
+      # Ajuste conforme necessário; o DATABASE_URL/SECRET_KEY etc virão do Coolify
+      GUNICORN_WORKERS: "2"
+      GUNICORN_TIMEOUT: "60"
+    # Volume persistente para uploads (mídia). Sem isso, uploads somem no redeploy.
+    volumes:
+      - media_data:/app/media
+    # O Coolify expõe a porta via Traefik; aqui só declaramos que a app escuta em 8000
+    expose:
+      - "8000"
+
+volumes:
+  media_data:

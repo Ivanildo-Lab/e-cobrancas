@@ -1,0 +1,36 @@
+# ---- Não copiar para dentro da imagem Docker ----
+.git
+.gitignore
+
+# Segredos e config local (as variáveis vêm do Coolify, não do .env)
+.env
+*.env.local
+
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Artefatos Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+
+# Mídia e estáticos gerados (mídia vira volume; estáticos são gerados no build)
+media/
+staticfiles/
+*.log
+
+# Pasta de deploy/docs (não precisa na imagem)
+deploy/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

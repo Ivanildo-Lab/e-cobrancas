@@ -465,28 +465,52 @@ def enviar_lote_whatsapp(request):
         return redirect('financeiro:lista_parcelas')
 
     # Regra de seguranca: enviar SOMENTE para as parcelas marcadas pelo usuario.
-    # Nunca usar filtros da tela como base do envio em massa.
+    # Nunca usar filtros da tela como base do envio em massa — EXCETO no modo
+    # "selecionar_todos", acionado pelo botao "Marcar TODOS (todas as paginas)",
+    # que expande pelos MESMOS filtros da tela (nunca fora do filtro aplicado).
     ids_selecionados = request.POST.getlist('parcelas_ids')
+    selecionar_todos = request.POST.get('selecionar_todos') == '1'
 
-    if not ids_selecionados:
+    if not ids_selecionados and not selecionar_todos:
         messages.warning(
             request,
             'Nenhuma parcela marcada. Selecione ao menos uma parcela na lista '
-            'para enviar cobrancas. Nenhuma mensagem foi enviada.'
+            '(ou use "Marcar TODOS (todas as paginas)") para enviar cobrancas. '
+            'Nenhuma mensagem foi enviada.'
         )
         return redirect('financeiro:lista_parcelas')
 
-    parcelas_selecionadas = (
-        Parcela.objects
-        .filter(id__in=ids_selecionados, situacao='Aberta')
-        .select_related('cliente')
-        .order_by('cliente_id', 'vencimento')
-    )
-    qtd_parcelas = parcelas_selecionadas.count()
+    if selecionar_todos:
+        # Modo todas-as-paginas: envia para TODAS as parcelas ABERTAS que casam
+        # com os filtros atuais, usando exatamente a mesma regra de filtro da tela.
+        filtros = {k: v for k, v in request.POST.items() if v}
+        filtros.setdefault('status', 'aberta')
+        query, _status = _construir_query_parcelas(filtros)
+        parcelas_selecionadas = (
+            query.filter(situacao='Aberta')
+            .select_related('cliente')
+            .order_by('cliente_id', 'vencimento')
+        )
+        qtd_parcelas = parcelas_selecionadas.count()
+        if not qtd_parcelas:
+            messages.warning(
+                request,
+                'Nenhuma parcela ABERTA encontrada com os filtros atuais. '
+                'Nenhuma mensagem foi enviada.'
+            )
+            return redirect('financeiro:lista_parcelas')
+    else:
+        parcelas_selecionadas = (
+            Parcela.objects
+            .filter(id__in=ids_selecionados, situacao='Aberta')
+            .select_related('cliente')
+            .order_by('cliente_id', 'vencimento')
+        )
+        qtd_parcelas = parcelas_selecionadas.count()
 
-    if not qtd_parcelas:
-        messages.info(request, 'As parcelas marcadas nao estao abertas. Nenhuma mensagem foi enviada.')
-        return redirect('financeiro:lista_parcelas')
+        if not qtd_parcelas:
+            messages.info(request, 'As parcelas marcadas nao estao abertas. Nenhuma mensagem foi enviada.')
+            return redirect('financeiro:lista_parcelas')
 
     clientes_notificar = {}
     for p in parcelas_selecionadas:
@@ -500,8 +524,9 @@ def enviar_lote_whatsapp(request):
     erros = 0
     empresa = Empresa.objects.first()
     logger.info(
-        f'[WHATSAPP-LOTE] Envio em massa solicitado: {qtd_parcelas} parcela(s) marcada(s) '
-        f'para {len(clientes_notificar)} cliente(s).'
+        f'[WHATSAPP-LOTE] Envio em massa solicitado '
+        f'(modo={"todas-as-paginas" if selecionar_todos else "marcadas"}): '
+        f'{qtd_parcelas} parcela(s) para {len(clientes_notificar)} cliente(s).'
     )
 
     for cliente, dados in clientes_notificar.items():

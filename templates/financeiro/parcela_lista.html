@@ -66,10 +66,14 @@
         class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition inline-flex items-center gap-2">
         <i class="fab fa-whatsapp"></i> Enviar Cobrancas (So as Marcadas)
     </button>
-    <button type="button" onclick="abrirModalBaixaLote()"
-        class="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-200 transition inline-flex items-center gap-2">
+    <button type="button" id="btn-baixa-lote" onclick="abrirModalBaixaLote()"
+        class="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-200 transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
         <i class="fa fa-check-double"></i> Baixar Selecionadas
     </button>
+    {% if parcelas.has_other_pages %}
+    <button type="button" id="btn-marcar-todos" onclick="alternarMarcarTodos()"
+        class="text-xs font-bold text-blue-600 underline hover:text-blue-800 whitespace-nowrap self-center">Marcar TODOS (todas as paginas)</button>
+    {% endif %}
     <span id="contador-selecao" class="text-xs font-bold text-slate-500 self-center"></span>
     {% endif %}
 </div>
@@ -91,6 +95,12 @@
 <form id="form-baixa-lote" method="post" action="{% url 'financeiro:baixa_lote' %}">
 {% csrf_token %}
 <input type="hidden" name="status" value="{{ current_filters.status|default:'aberta' }}">
+<input type="hidden" name="selecionar_todos" id="selecionar_todos" value="0">
+<input type="hidden" name="cliente" value="{{ current_filters.cliente|default:'' }}">
+<input type="hidden" name="venc_inicio" value="{{ current_filters.venc_inicio|default:'' }}">
+<input type="hidden" name="venc_fim" value="{{ current_filters.venc_fim|default:'' }}">
+<input type="hidden" name="pag_inicio" value="{{ current_filters.pag_inicio|default:'' }}">
+<input type="hidden" name="pag_fim" value="{{ current_filters.pag_fim|default:'' }}">
 <input type="hidden" name="data_pagamento" id="data-pagamento-lote" value="{% now 'Y-m-d' %}">
 <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
@@ -292,22 +302,26 @@
 </div>
 </form>
 
-<!-- Paginacao -->
+<!-- Paginacao (mesmo modelo da lista de clientes: primeira/ultima + reticencias) -->
 {% if parcelas.has_other_pages %}
 <nav class="mt-6 flex justify-center">
     <ul class="flex items-center gap-2">
         {% if parcelas.has_previous %}
-            <li><a href="?page={{ parcelas.previous_page_number }}&status={{ current_filters.status|default:'aberta' }}{% if current_filters.cliente %}&cliente={{ current_filters.cliente }}{% endif %}{% if current_filters.venc_inicio %}&venc_inicio={{ current_filters.venc_inicio }}{% endif %}{% if current_filters.venc_fim %}&venc_fim={{ current_filters.venc_fim }}{% endif %}{% if current_filters.pag_inicio %}&pag_inicio={{ current_filters.pag_inicio }}{% endif %}{% if current_filters.pag_fim %}&pag_fim={{ current_filters.pag_fim }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}&dir={{ dir }}{% endif %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
+            <li><a href="?page=1{% for k, v in current_filters.items %}{% if k != 'page' %}&{{ k }}={{ v|urlencode }}{% endif %}{% endfor %}" title="Primeira pagina" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;&laquo;</a></li>
+            <li><a href="?page={{ parcelas.previous_page_number }}{% for k, v in current_filters.items %}{% if k != 'page' %}&{{ k }}={{ v|urlencode }}{% endif %}{% endfor %}" title="Pagina anterior" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
         {% endif %}
         {% for num in parcelas.paginator.page_range %}
             {% if parcelas.number == num %}
                 <li><span class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{{ num }}</span></li>
-            {% elif num > parcelas.number|add:'-3' and num < parcelas.number|add:'3' %}
-                <li><a href="?page={{ num }}&status={{ current_filters.status|default:'aberta' }}{% if current_filters.cliente %}&cliente={{ current_filters.cliente }}{% endif %}{% if current_filters.venc_inicio %}&venc_inicio={{ current_filters.venc_inicio }}{% endif %}{% if current_filters.venc_fim %}&venc_fim={{ current_filters.venc_fim }}{% endif %}{% if current_filters.pag_inicio %}&pag_inicio={{ current_filters.pag_inicio }}{% endif %}{% if current_filters.pag_fim %}&pag_fim={{ current_filters.pag_fim }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}&dir={{ dir }}{% endif %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
+            {% elif num == 1 or num == parcelas.paginator.num_pages or num > parcelas.number|add:'-3' and num < parcelas.number|add:'3' %}
+                <li><a href="?page={{ num }}{% for k, v in current_filters.items %}{% if k != 'page' %}&{{ k }}={{ v|urlencode }}{% endif %}{% endfor %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
+            {% elif num == parcelas.number|add:'-3' or num == parcelas.number|add:'3' %}
+                <li><span class="px-1 text-gray-400">&hellip;</span></li>
             {% endif %}
         {% endfor %}
         {% if parcelas.has_next %}
-            <li><a href="?page={{ parcelas.next_page_number }}&status={{ current_filters.status|default:'aberta' }}{% if current_filters.cliente %}&cliente={{ current_filters.cliente }}{% endif %}{% if current_filters.venc_inicio %}&venc_inicio={{ current_filters.venc_inicio }}{% endif %}{% if current_filters.venc_fim %}&venc_fim={{ current_filters.venc_fim }}{% endif %}{% if current_filters.pag_inicio %}&pag_inicio={{ current_filters.pag_inicio }}{% endif %}{% if current_filters.pag_fim %}&pag_fim={{ current_filters.pag_fim }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}&dir={{ dir }}{% endif %}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+            <li><a href="?page={{ parcelas.next_page_number }}{% for k, v in current_filters.items %}{% if k != 'page' %}&{{ k }}={{ v|urlencode }}{% endif %}{% endfor %}" title="Proxima pagina" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+            <li><a href="?page={{ parcelas.paginator.num_pages }}{% for k, v in current_filters.items %}{% if k != 'page' %}&{{ k }}={{ v|urlencode }}{% endif %}{% endfor %}" title="Ultima pagina" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;&raquo;</a></li>
         {% endif %}
     </ul>
 </nav>
@@ -405,8 +419,52 @@
 
 {% block scripts %}
 <script>
+var marcarTodosAtivo = false;
+var totalListaFiltrada = {{ parcelas.paginator.count }};
+
 function getVisibleChecks() {
     return Array.from(document.querySelectorAll('.parcela-check:checked')).filter(cb => cb.offsetParent !== null);
+}
+
+function desativarModoTodos() {
+    if (marcarTodosAtivo) {
+        marcarTodosAtivo = false;
+        document.getElementById('selecionar_todos').value = '0';
+        atualizarTextoMarcarTodos();
+        var btnBaixa = document.getElementById('btn-baixa-lote');
+        if (btnBaixa) btnBaixa.disabled = false;
+    }
+}
+
+function alternarMarcarTodos() {
+    marcarTodosAtivo = !marcarTodosAtivo;
+    document.getElementById('selecionar_todos').value = marcarTodosAtivo ? '1' : '0';
+    document.querySelectorAll('.parcela-check').forEach(cb => {
+        if (cb.offsetParent !== null) {
+            cb.checked = marcarTodosAtivo;
+        }
+    });
+    var btnBaixa = document.getElementById('btn-baixa-lote');
+    if (btnBaixa) {
+        btnBaixa.disabled = marcarTodosAtivo;
+        btnBaixa.title = marcarTodosAtivo
+            ? 'Desative "Marcar TODOS" para baixar: a baixa vale somente pelas parcelas visiveis desta pagina.'
+            : '';
+    }
+    atualizarTextoMarcarTodos();
+    atualizarContadorSelecao();
+}
+
+function atualizarTextoMarcarTodos() {
+    var btn = document.getElementById('btn-marcar-todos');
+    if (!btn) return;
+    if (marcarTodosAtivo) {
+        btn.textContent = 'Voltar a marcar so esta pagina';
+        btn.className = 'text-xs font-bold text-red-600 underline hover:text-red-800 whitespace-nowrap self-center';
+    } else {
+        btn.textContent = 'Marcar TODOS (todas as paginas)';
+        btn.className = 'text-xs font-bold text-blue-600 underline hover:text-blue-800 whitespace-nowrap self-center';
+    }
 }
 
 function toggleAll(source) {
@@ -452,6 +510,11 @@ function contarClientesMarcados(checks) {
 function atualizarContadorSelecao() {
     const el = document.getElementById('contador-selecao');
     if (!el) return;
+    if (marcarTodosAtivo) {
+        el.textContent = `TODAS as ${totalListaFiltrada} parcela(s) da lista filtrada (todas as paginas)`;
+        el.className = 'text-xs font-black text-amber-600 self-center';
+        return;
+    }
     const checks = getVisibleChecks();
     if (checks.length === 0) {
         el.textContent = 'Nenhuma parcela marcada';
@@ -463,6 +526,14 @@ function atualizarContadorSelecao() {
 }
 
 function confirmarEnvioLote() {
+    if (marcarTodosAtivo) {
+        return confirm(
+            'ATENCAO: envio em massa!\n\n' +
+            `Voce selecionou TODAS as ${totalListaFiltrada} parcelas da lista FILTRADA (todas as paginas).\n` +
+            'Todos os clientes dessas parcelas receberao a cobranca.\n\n' +
+            'Confirma o envio?'
+        );
+    }
     const checks = getVisibleChecks();
     if (checks.length === 0) {
         alert('NENHUMA parcela marcada!\n\nSelecione ao menos uma parcela usando as caixas de selecao da lista.\nNenhuma mensagem sera enviada.');
@@ -480,6 +551,7 @@ function confirmarEnvioLote() {
 document.addEventListener('change', function(e) {
     if (e.target && (e.target.classList.contains('parcela-check')
         || e.target.id === 'check-all' || e.target.id === 'check-all-mobile')) {
+        desativarModoTodos();
         atualizarContadorSelecao();
     }
 });

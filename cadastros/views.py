@@ -99,24 +99,31 @@ def excluir_cidade(request, pk):
     return redirect('cadastros:lista_cidades')
 
 
+def _filtrar_clientes(busca='', status='ativos', cidade=''):
+    """Filtra clientes pelos mesmos criterios da tela da lista.
+    Usado tanto para exibir quanto para o envio 'selecionar todos'."""
+    queryset = Cliente.objects.select_related('cidade').all()
+    if status == 'ativos':
+        queryset = queryset.filter(ativo=True)
+    elif status == 'inativos':
+        queryset = queryset.filter(ativo=False)
+    if cidade:
+        queryset = queryset.filter(cidade_id=cidade)
+    if busca:
+        queryset = queryset.filter(
+            Q(nome__icontains=busca) | Q(contato__icontains=busca) |
+            Q(razao_social__icontains=busca) | Q(cpf__icontains=busca) | Q(cnpj__icontains=busca)
+        )
+    return queryset
+
+
 @login_required
 def lista_clientes(request):
     page = request.GET.get('page', 1)
     busca = request.GET.get('q', '')
     status_filter = request.GET.get('status', 'ativos')
     cidade_filter = request.GET.get('cidade', '')
-    queryset = Cliente.objects.select_related('cidade').all()
-    if status_filter == 'ativos':
-        queryset = queryset.filter(ativo=True)
-    elif status_filter == 'inativos':
-        queryset = queryset.filter(ativo=False)
-    if cidade_filter:
-        queryset = queryset.filter(cidade_id=cidade_filter)
-    if busca:
-        queryset = queryset.filter(
-            Q(nome__icontains=busca) | Q(contato__icontains=busca) |
-            Q(razao_social__icontains=busca) | Q(cpf__icontains=busca) | Q(cnpj__icontains=busca)
-        )
+    queryset = _filtrar_clientes(busca=busca, status=status_filter, cidade=cidade_filter)
     paginator = Paginator(queryset, 15)
     clientes = paginator.get_page(page)
     cidades = Cidade.objects.all().order_by('nome')
@@ -281,8 +288,9 @@ def enviar_whatsapp_clientes(request):
 
     ids_str = request.POST.get('clientes_ids', '')
     mensagem = request.POST.get('mensagem', '').strip()
+    selecionar_todos = request.POST.get('selecionar_todos') == '1'
 
-    if not ids_str:
+    if not ids_str and not selecionar_todos:
         messages.warning(request, 'Nenhum cliente selecionado.')
         return redirect('cadastros:lista_clientes')
 
@@ -290,8 +298,21 @@ def enviar_whatsapp_clientes(request):
         messages.warning(request, 'Digite uma mensagem para enviar.')
         return redirect('cadastros:lista_clientes')
 
-    ids = [int(x) for x in ids_str.split(',') if x.strip().isdigit()]
-    clientes = Cliente.objects.filter(pk__in=ids, ativo=True)
+    if selecionar_todos:
+        # Envia para TODOS os clientes que casam com os filtros da lista,
+        # usando exatamente a mesma regra de filtro da tela (nunca fora do filtro).
+        queryset = _filtrar_clientes(
+            busca=request.POST.get('q', ''),
+            status=request.POST.get('status', 'ativos'),
+            cidade=request.POST.get('cidade', ''),
+        )
+        if not queryset.exists():
+            messages.warning(request, 'Nenhum cliente encontrado com os filtros atuais.')
+            return redirect('cadastros:lista_clientes')
+        clientes = queryset
+    else:
+        ids = [int(x) for x in ids_str.split(',') if x.strip().isdigit()]
+        clientes = Cliente.objects.filter(pk__in=ids, ativo=True)
 
     enviados = 0
     erros = 0

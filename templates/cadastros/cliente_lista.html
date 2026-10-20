@@ -49,6 +49,10 @@
         Exibindo <span class="font-bold">{{ clientes.paginator.count }}</span> resultado(s)
     </p>
     <div class="flex gap-2 items-center">
+        {% if clientes.has_other_pages %}
+        <button type="button" id="btn-marcar-todos" onclick="alternarMarcarTodos()"
+            class="text-xs font-bold text-blue-600 underline hover:text-blue-800 whitespace-nowrap">Marcar TODOS (todas as paginas)</button>
+        {% endif %}
         <span id="contador-selecao-clientes" class="text-xs font-bold text-slate-400 max-w-[380px] truncate text-right">Nenhum cliente marcado</span>
         <button type="button" id="btn-whatsapp" onclick="abrirModalWhatsApp()"
             class="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
@@ -84,7 +88,7 @@
                 <td class="text-center px-4 py-4">
                     <input type="checkbox" name="clientes_select" value="{{ cliente.pk }}"
                         data-nome="{{ cliente.nome }}" data-telefone="{{ cliente.telefone|default:'' }}"
-                        onclick="atualizarContador()" class="cliente-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        onclick="clienteClicado(this)" class="cliente-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500">
                 </td>
                 <td class="px-6 py-4">
                     <div class="font-bold text-slate-700">{{ cliente.nome|truncatechars:35 }}</div>
@@ -146,7 +150,7 @@
                 <div class="flex items-start gap-2 flex-1 min-w-0">
                     <input type="checkbox" name="clientes_select" value="{{ cliente.pk }}"
                         data-nome="{{ cliente.nome }}" data-telefone="{{ cliente.telefone|default:'' }}"
-                        onclick="atualizarContador()" class="cliente-checkbox mt-1 w-4 h-4 accent-green-600 cursor-pointer flex-shrink-0">
+                        onclick="clienteClicado(this)" class="cliente-checkbox mt-1 w-4 h-4 accent-green-600 cursor-pointer flex-shrink-0">
                     <div class="min-w-0">
                         <p class="font-bold text-slate-700 text-sm truncate">{{ cliente.nome }}</p>
                         {% if cliente.razao_social %}
@@ -212,17 +216,21 @@
 <nav class="mt-6 flex justify-center">
     <ul class="flex items-center gap-2">
         {% if clientes.has_previous %}
-            <li><a href="?page={{ clientes.previous_page_number }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
+            <li><a href="?page=1&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" title="Primeira pagina" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;&laquo;</a></li>
+            <li><a href="?page={{ clientes.previous_page_number }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" title="Pagina anterior" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&laquo;</a></li>
         {% endif %}
         {% for num in clientes.paginator.page_range %}
             {% if clientes.number == num %}
                 <li><span class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{{ num }}</span></li>
-            {% elif num > clientes.number|add:'-3' and num < clientes.number|add:'3' %}
+            {% elif num == 1 or num == clientes.paginator.num_pages or num > clientes.number|add:'-3' and num < clientes.number|add:'3' %}
                 <li><a href="?page={{ num }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">{{ num }}</a></li>
+            {% elif num == clientes.number|add:'-3' or num == clientes.number|add:'3' %}
+                <li><span class="px-1 text-gray-400">&hellip;</span></li>
             {% endif %}
         {% endfor %}
         {% if clientes.has_next %}
-            <li><a href="?page={{ clientes.next_page_number }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+            <li><a href="?page={{ clientes.next_page_number }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" title="Proxima pagina" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;</a></li>
+            <li><a href="?page={{ clientes.paginator.num_pages }}&q={{ busca }}&status={{ status_filter }}&cidade={{ cidade_filter }}" title="Ultima pagina" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition">&raquo;&raquo;</a></li>
         {% endif %}
     </ul>
 </nav>
@@ -249,6 +257,10 @@
             <form id="form-whatsapp" method="post" action="{% url 'cadastros:enviar_whatsapp_clientes' %}">
                 {% csrf_token %}
                 <input type="hidden" name="clientes_ids" id="clientes-ids">
+                <input type="hidden" name="selecionar_todos" id="selecionar_todos" value="0">
+                <input type="hidden" name="q" value="{{ busca }}">
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                <input type="hidden" name="cidade" value="{{ cidade_filter }}">
                 <div class="mb-4">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Mensagem</label>
                     <textarea name="mensagem" rows="5" required placeholder="Digite a mensagem para enviar aos clientes selecionados..."
@@ -268,11 +280,50 @@
 </div>
 
 <script>
+var marcarTodosAtivo = false;
+var totalListaFiltrada = {{ clientes.paginator.count }};
+
 function getVisibleClienteChecks() {
     return Array.from(document.querySelectorAll('.cliente-checkbox')).filter(cb => cb.offsetParent !== null);
 }
 
+function desativarModoTodos() {
+    if (marcarTodosAtivo) {
+        marcarTodosAtivo = false;
+        document.getElementById('selecionar_todos').value = '0';
+        atualizarTextoMarcarTodos();
+    }
+}
+
+function alternarMarcarTodos() {
+    marcarTodosAtivo = !marcarTodosAtivo;
+    document.getElementById('selecionar_todos').value = marcarTodosAtivo ? '1' : '0';
+    if (marcarTodosAtivo) {
+        getVisibleClienteChecks().forEach(cb => { cb.checked = true; });
+    }
+    atualizarTextoMarcarTodos();
+    atualizarContador();
+}
+
+function atualizarTextoMarcarTodos() {
+    var btn = document.getElementById('btn-marcar-todos');
+    if (!btn) return;
+    if (marcarTodosAtivo) {
+        btn.textContent = 'Voltar a marcar so esta pagina';
+        btn.className = 'text-xs font-bold text-red-600 underline hover:text-red-800 whitespace-nowrap';
+    } else {
+        btn.textContent = 'Marcar TODOS (todas as paginas)';
+        btn.className = 'text-xs font-bold text-blue-600 underline hover:text-blue-800 whitespace-nowrap';
+    }
+}
+
+function clienteClicado(cb) {
+    desativarModoTodos();
+    atualizarContador();
+}
+
 function toggleSelectAll(el) {
+    desativarModoTodos();
     getVisibleClienteChecks().forEach(cb => {
         cb.checked = el.checked;
     });
@@ -282,7 +333,6 @@ function toggleSelectAll(el) {
 function atualizarContador() {
     var checked = getVisibleClienteChecks().filter(cb => cb.checked);
     var btn = document.getElementById('btn-whatsapp');
-    btn.disabled = checked.length === 0;
 
     var ids = [];
     var nomes = [];
@@ -291,23 +341,40 @@ function atualizarContador() {
         nomes.push(cb.dataset.nome);
     });
     document.getElementById('clientes-ids').value = ids.join(',');
-    document.getElementById('contagem-selecionados').textContent = ids.length;
-    document.getElementById('lista-selecionados').textContent = nomes.join(', ');
 
-    // Contador visivel na tela da lista (ao lado do botao Enviar)
     var contador = document.getElementById('contador-selecao-clientes');
-    if (contador) {
-        if (ids.length === 0) {
-            contador.textContent = 'Nenhum cliente marcado';
-            contador.className = 'text-xs font-bold text-slate-400 max-w-[380px] truncate text-right';
-        } else {
-            contador.textContent = ids.length + ' cliente(s) marcado(s): ' + nomes.join(', ');
-            contador.className = 'text-xs font-black text-green-600 max-w-[380px] truncate text-right';
+    if (marcarTodosAtivo) {
+        btn.disabled = false;
+        document.getElementById('contagem-selecionados').textContent = totalListaFiltrada;
+        document.getElementById('lista-selecionados').textContent = 'TODOS os ' + totalListaFiltrada + ' clientes da lista filtrada (todas as paginas)';
+        if (contador) {
+            contador.textContent = 'TODOS os ' + totalListaFiltrada + ' clientes (todas as paginas)';
+            contador.className = 'text-xs font-black text-amber-600 max-w-[380px] truncate text-right';
+        }
+    } else {
+        btn.disabled = checked.length === 0;
+        document.getElementById('contagem-selecionados').textContent = checked.length;
+        document.getElementById('lista-selecionados').textContent = nomes.join(', ');
+        if (contador) {
+            if (checked.length === 0) {
+                contador.textContent = 'Nenhum cliente marcado';
+                contador.className = 'text-xs font-bold text-slate-400 max-w-[380px] truncate text-right';
+            } else {
+                contador.textContent = checked.length + ' cliente(s) marcado(s): ' + nomes.join(', ');
+                contador.className = 'text-xs font-black text-green-600 max-w-[380px] truncate text-right';
+            }
         }
     }
 }
 
 function confirmarEnvioClientes() {
+    if (marcarTodosAtivo) {
+        return confirm(
+            'ATENCAO: envio em massa!\n\n' +
+            'Voce selecionou TODOS os ' + totalListaFiltrada + ' clientes da lista FILTRADA (todas as paginas).\n\n' +
+            'Confirma o envio?'
+        );
+    }
     var n = getVisibleClienteChecks().filter(cb => cb.checked).length;
     if (n === 0) {
         alert('NENHUM cliente selecionado!\n\nSelecione ao menos um cliente na lista.\nNenhuma mensagem sera enviada.');
@@ -317,6 +384,10 @@ function confirmarEnvioClientes() {
 }
 
 function abrirModalWhatsApp() {
+    if (marcarTodosAtivo) {
+        document.getElementById('modal-whatsapp').classList.remove('hidden');
+        return;
+    }
     var checked = getVisibleClienteChecks().filter(cb => cb.checked);
     if (checked.length === 0) {
         alert('Selecione ao menos um cliente.');

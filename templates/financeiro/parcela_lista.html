@@ -61,20 +61,16 @@
         <i class="fa fa-file-pdf"></i> Gerar PDF
     </a>
     {% if parcelas %}
-    <form method="post" action="{% url 'financeiro:enviar_lote_whatsapp' %}" class="inline"
-        onsubmit="return confirm('Enviar lembretes WhatsApp para os clientes das parcelas filtradas?')">
-        {% csrf_token %}
-        {% for k, v in current_filters.items %}
-            <input type="hidden" name="{{ k }}" value="{{ v }}">
-        {% endfor %}
-        <button type="submit" class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition inline-flex items-center gap-2">
-            <i class="fab fa-whatsapp"></i> Enviar Lembretes (Lote)
-        </button>
-    </form>
+    <button type="submit" form="form-baixa-lote" formaction="{% url 'financeiro:enviar_lote_whatsapp' %}"
+        onclick="return confirmarEnvioLote()"
+        class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition inline-flex items-center gap-2">
+        <i class="fab fa-whatsapp"></i> Enviar Cobrancas (So as Marcadas)
+    </button>
     <button type="button" onclick="abrirModalBaixaLote()"
         class="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-200 transition inline-flex items-center gap-2">
         <i class="fa fa-check-double"></i> Baixar Selecionadas
     </button>
+    <span id="contador-selecao" class="text-xs font-bold text-slate-500 self-center"></span>
     {% endif %}
 </div>
 
@@ -136,6 +132,7 @@
                     <td class="text-center px-2 py-3">
                         {% if sit == 'aberta' %}
                         <input type="checkbox" name="parcelas_ids" value="{{ parcela.id }}"
+                            data-cliente="{{ parcela.cliente_id }}"
                             class="parcela-check w-4 h-4 accent-blue-600 cursor-pointer">
                         {% endif %}
                     </td>
@@ -209,6 +206,13 @@
 
         <!-- Cards Mobile -->
         <div class="md:hidden divide-y divide-slate-100">
+            <div class="flex items-center gap-2 px-4 py-3 bg-slate-50">
+                <input type="checkbox" id="check-all-mobile" onclick="toggleAll(this)"
+                    class="w-4 h-4 accent-blue-600 cursor-pointer">
+                <label for="check-all-mobile" class="text-[10px] font-black text-slate-400 uppercase cursor-pointer select-none">
+                    Marcar todas (visiveis)
+                </label>
+            </div>
             {% for parcela in parcelas %}
             {% with sit=parcela.situacao|lower %}
             <div class="p-4 {% if sit == 'liquidada' %}bg-green-50/50{% elif sit == 'aberta' and parcela.esta_vencida %}bg-red-50/50{% endif %}">
@@ -216,6 +220,7 @@
                     <div class="flex items-start gap-2 flex-1 min-w-0">
                         {% if sit == 'aberta' %}
                         <input type="checkbox" name="parcelas_ids" value="{{ parcela.id }}"
+                            data-cliente="{{ parcela.cliente_id }}"
                             class="parcela-check mt-1 w-4 h-4 accent-blue-600 cursor-pointer flex-shrink-0">
                         {% endif %}
                         <div class="min-w-0">
@@ -438,6 +443,47 @@ function confirmarBaixaLote() {
     document.getElementById('data-pagamento-lote').value = data;
     return confirm(`Confirma baixa de ${checks.length} parcela(s) com data ${data}?`);
 }
+
+function contarClientesMarcados(checks) {
+    const clientes = new Set(checks.map(cb => cb.getAttribute('data-cliente')));
+    return clientes.size;
+}
+
+function atualizarContadorSelecao() {
+    const el = document.getElementById('contador-selecao');
+    if (!el) return;
+    const checks = getVisibleChecks();
+    if (checks.length === 0) {
+        el.textContent = 'Nenhuma parcela marcada';
+        el.className = 'text-xs font-bold text-slate-400 self-center';
+    } else {
+        el.textContent = `${checks.length} parcela(s) marcada(s) - ${contarClientesMarcados(checks)} cliente(s) receberao`;
+        el.className = 'text-xs font-black text-green-600 self-center';
+    }
+}
+
+function confirmarEnvioLote() {
+    const checks = getVisibleChecks();
+    if (checks.length === 0) {
+        alert('NENHUMA parcela marcada!\n\nSelecione ao menos uma parcela usando as caixas de selecao da lista.\nNenhuma mensagem sera enviada.');
+        return false;
+    }
+    const nClientes = contarClientesMarcados(checks);
+    return confirm(
+        'Enviar cobranca via WhatsApp?\n\n' +
+        `* Parcelas marcadas: ${checks.length}\n` +
+        `* Clientes que receberao: ${nClientes}\n\n` +
+        'Somente as parcelas MARCADAS serao consideradas.\nConfirma o envio?'
+    );
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target && (e.target.classList.contains('parcela-check')
+        || e.target.id === 'check-all' || e.target.id === 'check-all-mobile')) {
+        atualizarContadorSelecao();
+    }
+});
+document.addEventListener('DOMContentLoaded', atualizarContadorSelecao);
 
 var currentOrdenar = '{{ ordenar|default:"" }}';
 var currentDir = '{{ dir|default:"asc" }}';

@@ -250,7 +250,7 @@
                     <button type="button" onclick="fecharModalWhatsApp()" class="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition">
                         Cancelar
                     </button>
-                    <button type="submit" onclick="return confirm('Enviar mensagem para os clientes selecionados?')" class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition">
+                    <button type="submit" onclick="return confirmarEnvioClientes()" class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition">
                         <i class="fa fa-paper-plane mr-1"></i> Enviar
                     </button>
                 </div>
@@ -281,6 +281,15 @@ function atualizarContador() {
     document.getElementById('clientes-ids').value = ids.join(',');
     document.getElementById('contagem-selecionados').textContent = ids.length;
     document.getElementById('lista-selecionados').textContent = nomes.join(', ');
+}
+
+function confirmarEnvioClientes() {
+    var n = document.querySelectorAll('.cliente-checkbox:checked').length;
+    if (n === 0) {
+        alert('NENHUM cliente selecionado!\n\nSelecione ao menos um cliente na lista.\nNenhuma mensagem sera enviada.');
+        return false;
+    }
+    return confirm('Enviar a mensagem para ' + n + ' cliente(s) selecionado(s)?\n\nSomente os clientes MARCADOS receberao.\nConfirma o envio?');
 }
 
 function abrirModalWhatsApp() {

@@ -464,16 +464,32 @@ def enviar_lote_whatsapp(request):
     if request.method != 'POST':
         return redirect('financeiro:lista_parcelas')
 
-    filtros = {k: v for k, v in request.POST.items() if v}
-    query, _ = _construir_query_parcelas(filtros)
-    parcelas_filtradas = query.filter(situacao='Aberta').order_by('cliente_id', 'vencimento')
+    # Regra de seguranca: enviar SOMENTE para as parcelas marcadas pelo usuario.
+    # Nunca usar filtros da tela como base do envio em massa.
+    ids_selecionados = request.POST.getlist('parcelas_ids')
 
-    if not parcelas_filtradas.exists():
-        messages.info(request, 'Nenhuma parcela aberta encontrada com os filtros aplicados.')
+    if not ids_selecionados:
+        messages.warning(
+            request,
+            'Nenhuma parcela marcada. Selecione ao menos uma parcela na lista '
+            'para enviar cobrancas. Nenhuma mensagem foi enviada.'
+        )
+        return redirect('financeiro:lista_parcelas')
+
+    parcelas_selecionadas = (
+        Parcela.objects
+        .filter(id__in=ids_selecionados, situacao='Aberta')
+        .select_related('cliente')
+        .order_by('cliente_id', 'vencimento')
+    )
+    qtd_parcelas = parcelas_selecionadas.count()
+
+    if not qtd_parcelas:
+        messages.info(request, 'As parcelas marcadas nao estao abertas. Nenhuma mensagem foi enviada.')
         return redirect('financeiro:lista_parcelas')
 
     clientes_notificar = {}
-    for p in parcelas_filtradas:
+    for p in parcelas_selecionadas:
         c = p.cliente
         if c not in clientes_notificar:
             clientes_notificar[c] = {'parcelas': [], 'total': Decimal('0.00')}
@@ -483,6 +499,10 @@ def enviar_lote_whatsapp(request):
     enviados = 0
     erros = 0
     empresa = Empresa.objects.first()
+    logger.info(
+        f'[WHATSAPP-LOTE] Envio em massa solicitado: {qtd_parcelas} parcela(s) marcada(s) '
+        f'para {len(clientes_notificar)} cliente(s).'
+    )
 
     for cliente, dados in clientes_notificar.items():
         if not cliente.telefone:
@@ -499,7 +519,7 @@ def enviar_lote_whatsapp(request):
         thread.start()
         enviados += 1
 
-    texto = f'Lembretes WhatsApp programados para {enviados} cliente(s).'
+    texto = f'Cobrancas WhatsApp programadas para {enviados} cliente(s) ({qtd_parcelas} parcela(s) marcada(s)).'
     if erros:
         texto += f' {erros} cliente(s) sem telefone valido.'
     messages.info(request, texto)

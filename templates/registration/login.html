@@ -9,7 +9,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="font-sans antialiased h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-    <div class="w-full max-w-md p-8">
+    {% if empresa.banner %}
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ empresa.banner.url }}');"></div>
+        <div class="absolute inset-0 bg-black/60"></div>
+    {% endif %}
+    <div class="relative z-10 w-full max-w-md p-8">
         <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8">
             <div class="text-center mb-8">
                 <div class="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">

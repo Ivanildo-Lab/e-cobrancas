@@ -367,14 +367,45 @@ Ordem: um por dia/app, com os pre-voos da auditoria ANTES do primeiro deploy.
 
 ## DECISAO FINAL — encerrar conta PythonAnywhere (26/10/2026)
 
-**Decisao do Ivanildo:** os 6 apps migrados (e-cobrancas, gservicos, e-hotelaria, pocomanut, e-gerenteservicos, e-clubecampestre) sao os UNICOS em producao. **Os demais 9 projetos NAO serao migrados** — ficam no GitHub + local, sem uso, ate decidir o que fazer. Depois de **1 semana de margem de observacao** (a partir de 26/10 -> corte por volta de 02/11/2026), eliminar os projetos do PA e **fechar a conta**.
+**Decisao do Ivanildo:** os 7 apps migrados (e-cobrancas, gservicos, e-hotelaria, pocomanut, e-gerenteservicos, e-clubecampestre, e-cadempresas) sao os UNICOS em producao. **Os demais projetos NAO serao migrados** — ficam no GitHub + local, sem uso, ate decidir o que fazer. Depois de **1 semana de margem de observacao** (a partir de 26/10 -> corte por volta de 02/11/2026), eliminar os projetos do PA e **fechar a conta**.
 
 **Checklist de encerramento (ordem importa):**
-1. **Semana de observacao:** monitorar os 6 apps no VPS (logs do Coolify, erros, PDFs, uploads).
-2. **Agendar backups automaticos ANTES de fechar** (cron no VPS): `backup-mysql.sh` (os 6 bancos) + tar da media -> copia offsite (rclone/scp pro PC ou nuvem). O VPS sozinho NAO e backup (se o VPS morrer, perde tudo — production + backup juntos).
-3. **Exportar tudo que existe no PA uma ultima vez:** `/home/geficogestor` inteiro (tar) — inclui os projetos NAO migrados (codigo, media, configs) + dumps frescos dos 6 bancos de producao. Baixar pro PC e guardar (HD + nuvem).
+1. **Semana de observacao:** monitorar os 7 apps no VPS (logs do Coolify, erros, PDFs, uploads).
+2. **Agendar backups automaticos ANTES de fechar** (cron no VPS): `backup-mysql.sh` (os 6 bancos MySQL) + **backup do SQLite do e-cadempresas** (`cp /var/lib/docker/volumes/<vol>-data/_data/db.sqlite3` ou tar do mountpoint — 7o banco!) + tar da media -> copia offsite (rclone/scp pro PC ou nuvem). O VPS sozinho NAO e backup (se o VPS morrer, perde tudo — production + backup juntos).
+3. **Exportar tudo que existe no PA uma ultima vez:** `/home/geficogestor` inteiro (tar) — inclui os projetos NAO migrados (codigo, media, configs) + dumps frescos dos bancos MySQL (6) + o db.sqlite3 original (7o, mas ja copiado no corte). Baixar pro PC e guardar (HD + nuvem).
 4. **Conferir GitHub:** todos os projetos (migrados e nao) com o codigo la. O PA e o ultimo lugar com possivel codigo inpushado — por isso o passo 3.
 5. **Cancelar assinatura** no PA (Account -> Cancel subscription) e depois **excluir a conta** (Account settings -> Delete account).
 6. Apos o fecho: sobram os pendentes pos-migracao (rotacionar SECRET_KEY/DB_PASSWORD do e-clubecampestre, redirect HTTP->HTTPS dos dominios reais, Adminer por app).
 
 **Risco aceito:** os dumps do PA dos 6 apps de producao viram historia apos o corte (dados frescos vivem no VPS). Por isso o backup offsite do VPS e OBRIGATORIO antes de fechar a conta.
+
+## Lições do app e-cadempresas (26/10/2026) — o mais simples (7º app no ar)
+
+**Status: MIGRADO — CONCLUÍDO (26/10/2026).** https://ecadempresas.ivcsofthouse.com.br (HTTPS/cert automatico) + sslip.io (variante com PONTOS). PA no ar como backup (corte dos dados feito; ver lista "encerrar PA" acima). Validacoes: login OK, lista 678 empresas/970 socios/465 tabelas, PDF xhtml2pdf OK, CRUD OK. Codigo: repo `Ivanildo-Lab/e-cadempresas`, branch `main` (commit pre-voo 9a330b6 + fix 7bdee22).
+
+**Perfil do app:** Django 6 + **SQLite** (arquivo, sem MySQL!), sem uploads/midia, PDF via xhtml2pdf/reportlab (NAO WeasyPrint). O mais rapido da fila.
+
+### 1. SQLite em Docker = VOLUME obrigatorio (banco = arquivo dentro do container)
+- Sem volume, qualquer deploy zera o banco inteiro (clientes perdidos). MySQL dos outros apps tinha servico proprio; aqui o "banco" e um arquivo.
+- Solucao: `ENV SQLITE_PATH=/app/data/db.sqlite3` no Dockerfile + settings le `os.environ.get('SQLITE_PATH', str(BASE_DIR / 'db.sqlite3'))` (fallback = comportamento legado no PA/local) + volume Coolify em `/app/data`.
+
+### 2. Coolify Stop REMOVE o container (nao fica nem Exited)
+- `docker ps -a` nao mostra nada apos Stop -> `docker cp` falha ("must specify at least one container source") e comandos com $APP vazio quebram de formas confusas (ex: `docker exec ls` -> "No such container: ls").
+- **Fix sem container:** copiar DIRETO no volume: `docker volume ls | grep <uuid>` -> `docker volume inspect <vol> --format '{{.Mountpoint}}'` -> `cp arquivo <mountpoint>/db.sqlite3`. App parado = arquivo fechado = zero risco.
+
+### 3. Nomes de pacote Debian mudam entre versoes (2º caso na migracao!)
+- Build falhou: `E: Unable to locate package libfreetype1-dev` no Debian 13/trixie -> nome correto e **`libfreetype-dev`**.
+- **Diagnostico definitivo (reuso para qualquer erro de pacote):** `docker run --rm python:3.13-slim sh -c 'apt-get update -qq >/dev/null 2>&1; apt-cache search --names-only "NOME.*-dev"'` — testa no ambiente EXATO do build, sem chute.
+
+### 4. sslip.io: a MESMA IP tem duas grafias (pontos E hifens) = hosts diferentes
+- `ecadempresas.187.127.63.185.sslip.io` e `ecadempresas.187-127-63-185.sslip.io` sao legais igual, mas Host header diferente -> se ALLOWED_HOSTS tem uma e o usuario acessa a outra => **400 Bad Request** (log: `GET / 400` com referer da grafia errada).
+- **Fix:** cadastrar AMBAS as variantes em DJANGO_ALLOWED_HOSTS e DJANGO_CSRF_TRUSTED_ORIGINS (e o dominio real). O cert sai do Coolify conforme os dominios cadastrados.
+
+### 5. Regra de ouro do commit: NUNCA `git add -A` em repo com db/binarios
+- `db.sqlite3` rastreado no git aparece como ` M` (dados locais de teste). Commit seletivo: `git add Dockerfile .env.example settings.py ...` so nos arquivos do pre-voo. `__pycache__` igual.
+
+### 6. Settings env-driven mantendo compat com PA durante a margem
+- SECRET_KEY/DEBUG/ALLOWED_HOSTS/CSRF via `os.environ` com fallback = valores atuais -> PA continua funcionando ate o fecho, e o Coolify ganha os overrides. DEBUG padrao **False** (o PA antigo vivia com DEBUG=True hardcoded — nenhum codigo dependia de DEBUG, confirmado por grep).
+- STATICFILES_STORAGE (legado) trocado por dict STORAGES + `CompressedStaticFilesStorage` + proxy SSL/cookies secure — mesmo padrao vencedor dos apps anteriores.
+
+**PENDENTE pos-migracao:** rotacionar SECRET_KEY do e-cadempresas (hardcoded antigo no historico do git).

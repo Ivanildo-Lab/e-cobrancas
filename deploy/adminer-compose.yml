@@ -1,0 +1,34 @@
+# ---- Adminer: gerenciador web do MySQL via Coolify ----
+# Por que Adminer e não phpMyAdmin?
+#   - Arquivo único, muito menor e com superfície de ataque menor.
+#   - Mantido ativamente, imagem oficial de primeira página.
+#   - Faz tudo que você precisa: navegar nos 14 bancos, rodar queries,
+#     importar/exportar dumps (SQL) por banco.
+#
+# COMO USAR NO COOLIFY:
+#   1) Adicione como "Public Repository" OU cole este compose num projeto.
+#   2) O MySQL e o Adminer precisam estar na MESMA rede do Coolify
+#      (o Coolify coloca todos os serviços de um projeto na mesma rede).
+#   3) Aponte um domínio privado, ex.: https://db.seudominio.com
+#      (o Coolify gera o SSL automaticamente).
+#   4) Conecte com Host = "mysql" (o nome do serviço MySQL), porta 3306,
+#      usuário/senha do MySQL.
+#
+# ⚠️ SEGURANÇA (leia o deploy/GESTAO-BANCO.md antes de expor na internet):
+#   - Use senha forte e única no MySQL.
+#   - Restrinja o acesso (IP allowlist / Cloudflare Access / basic auth).
+#   - Rode fail2ban para bloquear tentativas de login.
+#   - Ideal: só habilite o domínio do Adminer quando for usar, e desative depois.
+
+services:
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    # Porta interna; o Coolify expõe via Traefik com HTTPS
+    expose:
+      - "8080"
+    environment:
+      # Pré-preenche o campo "Servidor" do login com o serviço MySQL do Coolify
+      ADMINER_DEFAULT_SERVER: "mysql"
+    # Se quiser, limite o container à rede interna (sem publicar porta no host).
+    # O acesso externo é feito SÓ pelo proxy do Coolify (HTTPS).

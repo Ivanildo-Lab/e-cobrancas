@@ -364,3 +364,17 @@ Ordem: um por dia/app, com os pre-voos da auditoria ANTES do primeiro deploy.
 3. Se nao achar nada: re-extrair do PA (web parado mas filesystem intacto).
 4. `docker cp /root/media/<app>/. "$APP:/app/media/"` e conferir com `find /app/media -type f | wc -l`.
 5. Volume permanente no Coolify + re-copia (o volume nasce vazio).
+
+## DECISAO FINAL — encerrar conta PythonAnywhere (26/10/2026)
+
+**Decisao do Ivanildo:** os 6 apps migrados (e-cobrancas, gservicos, e-hotelaria, pocomanut, e-gerenteservicos, e-clubecampestre) sao os UNICOS em producao. **Os demais 9 projetos NAO serao migrados** — ficam no GitHub + local, sem uso, ate decidir o que fazer. Depois de **1 semana de margem de observacao** (a partir de 26/10 -> corte por volta de 02/11/2026), eliminar os projetos do PA e **fechar a conta**.
+
+**Checklist de encerramento (ordem importa):**
+1. **Semana de observacao:** monitorar os 6 apps no VPS (logs do Coolify, erros, PDFs, uploads).
+2. **Agendar backups automaticos ANTES de fechar** (cron no VPS): `backup-mysql.sh` (os 6 bancos) + tar da media -> copia offsite (rclone/scp pro PC ou nuvem). O VPS sozinho NAO e backup (se o VPS morrer, perde tudo — production + backup juntos).
+3. **Exportar tudo que existe no PA uma ultima vez:** `/home/geficogestor` inteiro (tar) — inclui os projetos NAO migrados (codigo, media, configs) + dumps frescos dos 6 bancos de producao. Baixar pro PC e guardar (HD + nuvem).
+4. **Conferir GitHub:** todos os projetos (migrados e nao) com o codigo la. O PA e o ultimo lugar com possivel codigo inpushado — por isso o passo 3.
+5. **Cancelar assinatura** no PA (Account -> Cancel subscription) e depois **excluir a conta** (Account settings -> Delete account).
+6. Apos o fecho: sobram os pendentes pos-migracao (rotacionar SECRET_KEY/DB_PASSWORD do e-clubecampestre, redirect HTTP->HTTPS dos dominios reais, Adminer por app).
+
+**Risco aceito:** os dumps do PA dos 6 apps de producao viram historia apos o corte (dados frescos vivem no VPS). Por isso o backup offsite do VPS e OBRIGATORIO antes de fechar a conta.

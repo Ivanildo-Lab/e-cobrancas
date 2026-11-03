@@ -1,9 +1,20 @@
 import requests
 import json
 import logging
+import time
+import random
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _rate_limit():
+    """Aplica rate limiting para evitar banimento no WhatsApp.
+    Delay aleatório entre 2 e 5 segundos entre requisições.
+    """
+    delay = random.uniform(2, 5)
+    logger.info(f"[RATE-LIMIT] Aguardando {delay:.2f}s antes de enviar...")
+    time.sleep(delay)
 
 
 def enviar_mensagem_whatsapp(telefone_destino, mensagem_texto):
@@ -29,6 +40,9 @@ def enviar_mensagem_whatsapp(telefone_destino, mensagem_texto):
     }
 
     try:
+        # Rate limiting para evitar banimento
+        _rate_limit()
+
         logger.info(f"[EVOLUTION] POST {api_url}")
         logger.info(f"[EVOLUTION] Payload: {json.dumps(payload, ensure_ascii=False)}")
         response = requests.post(api_url, headers=headers, json=payload, timeout=30)

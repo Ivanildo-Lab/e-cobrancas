@@ -80,7 +80,7 @@
 
         <div class="header">
             <div class="header-left">
-                {% if empresa and empresa.logo %}
+                {% if empresa and empresa.logo and empresa.logo.name %}
                     <img src="{{ request.build_absolute_uri(empresa.logo.url) }}" alt="{{ empresa.nome }}" style="height: 48px; width: auto; border-radius: 8px; object-fit: contain;">
                 {% else %}
                     <div class="logo-box">EC</div>
@@ -149,7 +149,7 @@
 
             <div class="assinatura">
                 <div class="assinatura-box">
-                    {% if empresa and empresa.assinatura %}
+                    {% if empresa and empresa.assinatura and empresa.assinatura.name %}
                         <img src="{{ request.build_absolute_uri(empresa.assinatura.url) }}" style="height: 60px; margin: 0 auto 8px auto; display: block; object-fit: contain;">
                     {% else %}
                         <div class="assinatura-linha"></div>

@@ -170,6 +170,7 @@ def montar_mensagem_recibo(cliente_nome, parcelas_info, total_pago, data_pagamen
     except (TypeError, ValueError):
         total_txt = str(total_pago)
     partes.append(f"\n*Valor total pago: R$ {total_txt}*")
+    partes.append("\nReferente a manutenção do sistema comercial instalado em sua empresa, conforme contrato vigente.")
     if empresa is not None and getattr(empresa, 'nome', None):
         partes.append(f"\nRecebedor: {empresa.nome}")
         if getattr(empresa, 'responsavel', None):
@@ -184,6 +185,7 @@ def montar_mensagem_cobranca(cliente, parcelas, empresa=None):
     total_devido = sum(p.valorconta or 0 for p in parcelas)
     partes = [f"{_saudacao_aleatoria()}, *{cliente.nome}!*"]
     partes.append("Verificamos que constam as seguintes parcelas em aberto em seu nome:")
+    partes.append("\nReferente a manutenção do sistema comercial instalado em sua empresa, conforme contrato vigente.")
     for p in parcelas:
         partes.append(f"  - Venc.: *{p.vencimento.strftime('%d/%m/%Y')}* | Valor: R$ {p.valorconta:.2f}")
     partes.append(f"\n*Valor total pendente: R$ {total_devido:.2f}*")

@@ -176,7 +176,7 @@ def montar_mensagem_recibo(cliente_nome, parcelas_info, total_pago, data_pagamen
         if getattr(empresa, 'responsavel', None):
             partes.append(f"Responsavel: {empresa.responsavel}")
     partes.append("\nObrigado pelo pagamento!")
-    partes.append("Em caso de duvida, responda esta mensagem.")
+    partes.append("\nEm caso de duvida, entre em contato pelo nosso telefone (99) 98119-7553.")
     partes.append("\nVisite o nosso site ivcsofthouse.com.br para conhecer nossos produtos.")
     return "\n".join(partes)
 
@@ -203,6 +203,7 @@ def montar_mensagem_cobranca(cliente, parcelas, empresa=None):
 
     partes.append("\nPara regularizar ou obter mais detalhes, por favor, entre em contato.")
     partes.append("\n\n*IGNORAR CASO O DEBITO JA TENHA SIDO PAGO, E O COMPROVANTE ENVIADO.*")
+    partes.append("\nEm caso de duvida, entre em contato pelo nosso telefone (99) 98119-7553.")
     partes.append("\nVisite o nosso site ivcsofthouse.com.br para conhecer nossos produtos.")
     partes.append("\nObrigado!")
     return "\n".join(partes)

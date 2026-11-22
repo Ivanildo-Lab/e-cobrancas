@@ -14,9 +14,12 @@ urlpatterns = [
     path('parcelas/<int:pk>/desfazer/', views.desfazer_liquidacao, name='desfazer_liquidacao'),
     path('parcelas/whatsapp/<int:pk>/', views.enviar_whatsapp_individual, name='enviar_whatsapp_individual'),
     path('parcelas/whatsapp/lote/', views.enviar_lote_whatsapp, name='enviar_lote_whatsapp'),
+    path('parcelas/telegram/<int:pk>/', views.enviar_telegram_individual, name='enviar_telegram_individual'),
+    path('parcelas/telegram/lote/', views.enviar_lote_telegram, name='enviar_lote_telegram'),
     path('parcelas/pdf/', views.gerar_pdf, name='gerar_pdf'),
     path('parcelas/baixa-lote/', views.baixa_lote, name='baixa_lote'),
     path('parcelas/recibo-lote/', views.recibo_lote, name='recibo_lote'),
     path('parcelas/recibo/enviar-whatsapp/', views.enviar_recibo_whatsapp, name='enviar_recibo_whatsapp'),
+    path('parcelas/recibo/enviar-telegram/', views.enviar_recibo_telegram, name='enviar_recibo_telegram'),
     path('parcelas/<int:pk>/recibo/', views.recibo_individual, name='recibo_individual'),
 ]

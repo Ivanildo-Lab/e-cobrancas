@@ -1,6 +1,31 @@
 from django.db import models
 
 
+class ClienteTelegram(models.Model):
+    """Vincula um Cliente ao chat_id do Telegram.
+    Preenchido automaticamente quando o cliente envia /start para o bot.
+    """
+    cliente = models.OneToOneField(
+        'Cliente', on_delete=models.CASCADE,
+        related_name='telegram', db_column='cliente',
+        verbose_name='Cliente'
+    )
+    chat_id = models.CharField(max_length=50, unique=True, verbose_name='Chat ID do Telegram')
+    primeiro_nome = models.CharField(max_length=150, blank=True, verbose_name='Primeiro nome no Telegram')
+    ativo = models.BooleanField(default=True, verbose_name='Ativo')
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'tbl_clientes_telegram'
+        verbose_name = 'Cliente Telegram'
+        verbose_name_plural = 'Clientes Telegram'
+        ordering = ['cliente__nome']
+
+    def __str__(self):
+        return f"{self.cliente.nome} → {self.chat_id}"
+
+
 class Cidade(models.Model):
     nome = models.CharField(max_length=100, db_column='nome', verbose_name='Nome da Cidade')
     uf = models.CharField(max_length=2, db_column='uf', verbose_name='Estado (UF)')

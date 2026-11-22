@@ -64,7 +64,12 @@
     <button type="submit" form="form-baixa-lote" formaction="{% url 'financeiro:enviar_lote_whatsapp' %}"
         onclick="return confirmarEnvioLote()"
         class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition inline-flex items-center gap-2">
-        <i class="fab fa-whatsapp"></i> Enviar Cobrancas (So as Marcadas)
+        <i class="fab fa-whatsapp"></i> WhatsApp (So as Marcadas)
+    </button>
+    <button type="submit" form="form-baixa-lote" formaction="{% url 'financeiro:enviar_lote_telegram' %}"
+        onclick="return confirmarEnvioLote()"
+        class="bg-sky-100 text-sky-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-sky-200 transition inline-flex items-center gap-2">
+        <i class="fab fa-telegram"></i> Telegram (So as Marcadas)
     </button>
     <button type="button" id="btn-baixa-lote" onclick="abrirModalBaixaLote()"
         class="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-200 transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -187,6 +192,11 @@
                                     <i class="fab fa-whatsapp"></i>
                                 </a>
                                 {% endif %}
+                                <a href="{% url 'financeiro:enviar_telegram_individual' parcela.pk %}"
+                                    class="text-sky-500 hover:text-sky-700 p-1" title="Enviar Telegram"
+                                    onclick="return confirm('Enviar cobranca via Telegram para {{ parcela.cliente.nome }}?')">
+                                    <i class="fab fa-telegram"></i>
+                                </a>
                             {% elif sit == 'liquidada' %}
                                 <a href="{% url 'financeiro:recibo_individual' parcela.pk %}" target="_blank"
                                     class="text-purple-500 hover:text-purple-700 p-1" title="Imprimir Recibo">

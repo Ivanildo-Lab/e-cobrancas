@@ -59,6 +59,8 @@
         .btn-whats { position: fixed; bottom: 76px; right: 32px; background: #16a34a; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); z-index: 10; display: inline-flex; align-items: center; gap: 6px; }
         .btn-whats:hover { background: #15803d; }
         .btn-whats:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-telegram { position: fixed; bottom: 120px; right: 32px; background: #0ea5e9; color: #fff; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; cursor: pointer; font-size: 11px; box-shadow: 0 4px 6px rgba(0,0,0,.2); z-index: 10; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-telegram:hover { background: #0284c7; }
         .msg { max-width: 600px; margin: 0 auto 12px auto; padding: 10px 14px; border-radius: 10px; font-size: 11px; font-weight: bold; }
         .msg-success { background: #dcfce7; border: 1px solid #86efac; color: #15803d; }
         .msg-warning { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; }
@@ -181,6 +183,9 @@
     <button type="button" class="btn-whats no-print" onclick="document.getElementById('modal-whats-recibo').classList.remove('hidden')">
         <i class="fab fa-whatsapp"></i> Enviar via WhatsApp
     </button>
+    <button type="button" class="btn-telegram no-print" onclick="document.getElementById('modal-telegram-recibo').classList.remove('hidden')">
+        <i class="fab fa-telegram"></i> Enviar via Telegram
+    </button>
     {% endif %}
     <button class="btn-print no-print" onclick="window.print()">
         <i class="fa fa-print"></i> Imprimir Recibo
@@ -224,6 +229,47 @@
                     <button type="submit"
                         style="padding:8px 20px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:11px;cursor:pointer;">
                         <i class="fab fa-whatsapp"></i> Confirmar Envio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="modal-telegram-recibo" class="hidden no-print modal-overlay">
+        <div class="modal-box">
+            <h3 style="font-size:15px;font-weight:bold;color:#111827;margin-bottom:12px;">
+                <i class="fab fa-telegram" style="color:#0ea5e9;margin-right:6px;"></i> Enviar recibo via Telegram
+            </h3>
+            <p style="font-size:11px;color:#4b5563;margin-bottom:12px;">
+                Será enviada a mensagem de comprovante de pagamento via Telegram Bot, em segundo plano.
+            </p>
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:#374151;">
+                {% for c in clientes_info %}
+                <div style="margin-bottom:{% if not forloop.last %}8px{% else %}0{% endif %};">
+                    <div style="font-weight:bold;">{{ c.cliente_nome }}</div>
+                    <div>Total: R$ {{ c.total|floatformat:2 }}</div>
+                </div>
+                {% empty %}
+                <div>Nenhum cliente identificado.</div>
+                {% endfor %}
+            </div>
+            <p style="font-size:10px;color:#6b7280;margin-bottom:12px;">
+                <i class="fa fa-info-circle"></i> O cliente precisa estar vinculado ao bot Telegram.
+                Se ainda não estiver, peça para enviar <code>/start C{{ recibo.parcelas.0.cliente_id }}</code>.
+            </p>
+            <form method="post" action="{% url 'financeiro:enviar_recibo_telegram' %}">
+                {% csrf_token %}
+                <input type="hidden" name="parcela_ids" value="{{ recibo_parcela_ids }}">
+                <input type="hidden" name="data_pagamento" value="{{ recibo.data_pagamento }}">
+                <input type="hidden" name="status" value="{{ statusiltro }}">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+                    <button type="button" onclick="document.getElementById('modal-telegram-recibo').classList.add('hidden')"
+                        style="padding:8px 18px;background:#f3f4f6;color:#4b5563;border:none;border-radius:10px;font-weight:bold;font-size:11px;cursor:pointer;">
+                        Voltar
+                    </button>
+                    <button type="submit"
+                        style="padding:8px 20px;background:#0ea5e9;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:11px;cursor:pointer;">
+                        <i class="fab fa-telegram"></i> Confirmar Envio
                     </button>
                 </div>
             </form>

@@ -459,6 +459,101 @@ def enviar_whatsapp_individual(request, pk):
     return redirect('financeiro:lista_parcelas')
 
 
+def _enviar_telegram_background(chat_id, mensagem):
+    """Envia mensagem via Telegram em background."""
+    from .services import enviar_mensagem_telegram
+    logger.info(f"[TELEGRAM-BG] Iniciando envio para chat_id={chat_id}")
+    sucesso, detalhes = enviar_mensagem_telegram(chat_id, mensagem)
+    if sucesso:
+        logger.info(f"[TELEGRAM-BG] SUCESSO para {chat_id}: {detalhes}")
+    else:
+        logger.error(f"[TELEGRAM-BG] FALHA para {chat_id}: {detalhes}")
+
+
+@login_required
+def enviar_telegram_individual(request, pk):
+    """Envia cobrança via Telegram (canal alternativo ao WhatsApp)."""
+    from cadastros.models import ClienteTelegram
+    from .services import enviar_mensagem_telegram
+
+    parcela = get_object_or_404(Parcela, pk=pk)
+    cliente = parcela.cliente
+
+    try:
+        tg = ClienteTelegram.objects.get(cliente=cliente, ativo=True)
+    except ClienteTelegram.DoesNotExist:
+        messages.warning(
+            request,
+            f'{cliente.nome} não está vinculado ao Telegram. '
+            f'Peça para o cliente enviar <code>/start C{cliente.id}</code> para o bot.'
+        )
+        return redirect('financeiro:lista_parcelas')
+
+    empresa = Empresa.objects.first()
+    mensagem = montar_mensagem_cobranca(cliente, [parcela], empresa)
+
+    thread = Thread(target=_enviar_telegram_background, args=(tg.chat_id, mensagem))
+    thread.start()
+
+    messages.success(request, f'Cobrança via Telegram programada para {cliente.nome}.')
+    return redirect('financeiro:lista_parcelas')
+
+
+@login_required
+def enviar_lote_telegram(request):
+    """Envia cobranças em lote via Telegram."""
+    from cadastros.models import ClienteTelegram
+    from .services import enviar_mensagem_telegram
+
+    if request.method != 'POST':
+        return redirect('financeiro:lista_parcelas')
+
+    ids_selecionados = request.POST.getlist('parcelas_ids')
+    if not ids_selecionados:
+        messages.warning(request, 'Nenhuma parcela selecionada.')
+        return redirect('financeiro:lista_parcelas')
+
+    parcelas = (
+        Parcela.objects
+        .filter(id__in=ids_selecionados, situacao='Aberta')
+        .select_related('cliente')
+        .order_by('cliente_id', 'vencimento')
+    )
+    if not parcelas.exists():
+        messages.info(request, 'As parcelas marcadas não estão abertas.')
+        return redirect('financeiro:lista_parcelas')
+
+    # Agrupa por cliente
+    clientes_notificar = {}
+    for p in parcelas:
+        c = p.cliente
+        if c not in clientes_notificar:
+            clientes_notificar[c] = []
+        clientes_notificar[c].append(p)
+
+    empresa = Empresa.objects.first()
+    enviados = 0
+    sem_vinculo = 0
+
+    for cliente, parcelas_cliente in clientes_notificar.items():
+        try:
+            tg = ClienteTelegram.objects.get(cliente=cliente, ativo=True)
+        except ClienteTelegram.DoesNotExist:
+            sem_vinculo += 1
+            continue
+
+        msg = montar_mensagem_cobranca(cliente, parcelas_cliente, empresa)
+        thread = Thread(target=_enviar_telegram_background, args=(tg.chat_id, msg))
+        thread.start()
+        enviados += 1
+
+    texto = f'Cobranças via Telegram programadas para {enviados} cliente(s).'
+    if sem_vinculo:
+        texto += f' {sem_vinculo} cliente(s) sem vínculo no Telegram.'
+    messages.info(request, texto)
+    return redirect('financeiro:lista_parcelas')
+
+
 @login_required
 def enviar_lote_whatsapp(request):
     if request.method != 'POST':
@@ -851,5 +946,79 @@ def enviar_recibo_whatsapp(request):
         messages.error(request, 'Nao foi possivel enviar o recibo via WhatsApp.')
 
     # Após o envio do comprovante, volta para a lista de parcelas atrasadas
+    base_lista = resolve_url('financeiro:lista_parcelas')
+    return redirect(f'{base_lista}?status=atrasada')
+
+
+@login_required
+def enviar_recibo_telegram(request):
+    """Envia o comprovante de pagamento via Telegram Bot."""
+    from cadastros.models import ClienteTelegram
+
+    if request.method != 'POST':
+        return redirect('financeiro:lista_parcelas')
+
+    raw_ids = request.POST.get('parcela_ids', '') or request.POST.get('ids', '')
+    ids = []
+    for chunk in request.POST.getlist('parcela_ids'):
+        ids.extend([x.strip() for x in chunk.split(',') if x.strip()])
+    if raw_ids and raw_ids not in request.POST.getlist('parcela_ids'):
+        ids.extend([x.strip() for x in raw_ids.split(',') if x.strip()])
+    ids = [i for i in ids if str(i).isdigit()]
+    recibo_sessao = request.session.get('recibo_data')
+    if not ids and recibo_sessao:
+        ids = [str(p.get('id')) for p in recibo_sessao.get('parcelas', []) if p.get('id')]
+
+    if not ids:
+        messages.warning(request, 'Nenhuma parcela identificada para envio do recibo.')
+        return redirect(f"{resolve_url('financeiro:lista_parcelas')}?status=atrasada")
+
+    parcelas = list(Parcela.objects.select_related('cliente').filter(id__in=ids))
+    if not parcelas:
+        messages.warning(request, 'Nenhuma parcela encontrada para envio do recibo.')
+        return redirect(f"{resolve_url('financeiro:lista_parcelas')}?status=atrasada")
+
+    empresa = Empresa.objects.first()
+    por_cliente = {}
+    for p in parcelas:
+        por_cliente.setdefault(p.cliente_id, {'cliente': p.cliente, 'parcelas': []})
+        por_cliente[p.cliente_id]['parcelas'].append(p)
+
+    enviados, erros = 0, []
+    data_pagamento = request.POST.get('data_pagamento', '').strip()
+    if not data_pagamento and recibo_sessao:
+        data_pagamento = recibo_sessao.get('data_pagamento', '')
+    if not data_pagamento:
+        pag = parcelas[0].pagamento
+        data_pagamento = pag.strftime('%d/%m/%Y') if pag else '-'
+
+    for dados in por_cliente.values():
+        cliente = dados['cliente']
+        itens = dados['parcelas']
+        try:
+            tg = ClienteTelegram.objects.get(cliente=cliente, ativo=True)
+        except ClienteTelegram.DoesNotExist:
+            erros.append(f'{cliente.nome} não vinculado ao Telegram.')
+            continue
+        parcelas_info = [{'parcela': p.parcela, 'valor': float(p.valorconta or 0), 'vencimento': p.vencimento.strftime('%d/%m/%Y') if p.vencimento else '-'} for p in itens]
+        total = sum(i['valor'] for i in parcelas_info)
+        mensagem = montar_mensagem_recibo(
+            cliente.nome, parcelas_info, total, data_pagamento, empresa
+        )
+        thread = Thread(target=_enviar_telegram_background, args=(tg.chat_id, mensagem))
+        thread.start()
+        enviados += 1
+
+    if enviados:
+        messages.success(
+            request,
+            f'Recibo programado para envio via Telegram para {enviados} cliente(s).'
+        )
+    if erros:
+        for e in erros:
+            messages.warning(request, e)
+    if not enviados and not erros:
+        messages.error(request, 'Nao foi possivel enviar o recibo via Telegram.')
+
     base_lista = resolve_url('financeiro:lista_parcelas')
     return redirect(f'{base_lista}?status=atrasada')

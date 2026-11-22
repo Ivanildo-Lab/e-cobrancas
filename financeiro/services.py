@@ -114,6 +114,56 @@ def enviar_mensagem_whatsapp(telefone_destino, mensagem_texto):
         return False, {"error": str(e)}
 
 
+# =====================================================================
+# TELEGRAM — canal alternativo gratuito (sem bloqueio)
+# =====================================================================
+
+def enviar_mensagem_telegram(chat_id, mensagem_texto):
+    """Envia mensagem via Telegram Bot API.
+
+    Requer a variável de ambiente TELEGRAM_BOT_TOKEN configurada.
+    O chat_id vem da tabela tbl_clientes_telegram (vinculado via /start).
+
+    Retorna (sucesso: bool, detalhes: dict).
+    """
+    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    if not bot_token:
+        logger.error("[TELEGRAM] TELEGRAM_BOT_TOKEN nao configurada.")
+        return False, {"error": "Telegram Bot Token nao configurado."}
+
+    if not chat_id:
+        return False, {"error": "Chat ID do Telegram nao informado."}
+
+    api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+    payload = {
+        "chat_id": chat_id,
+        "text": mensagem_texto,
+        "parse_mode": "HTML",
+    }
+
+    try:
+        logger.info(f"[TELEGRAM] POST sendMessage chat_id={chat_id}")
+        response = requests.post(api_url, json=payload, timeout=15)
+        logger.info(f"[TELEGRAM] Response status: {response.status_code}")
+        logger.info(f"[TELEGRAM] Response body: {response.text[:300]}")
+
+        data = response.json()
+        if data.get("ok"):
+            return True, data
+        else:
+            desc = data.get("description", "Erro desconhecido")
+            logger.error(f"[TELEGRAM] Erro: {desc}")
+            return False, {"error": desc}
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"[TELEGRAM] Request error: {e}")
+        return False, {"error": str(e)}
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Erro inesperado: {e}")
+        return False, {"error": str(e)}
+
+
 def telefone_formatar(telefone):
     numeros = ''.join(filter(str.isdigit, telefone or ''))
     if not numeros.startswith('55'):
